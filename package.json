@@ -1,10 +1,20 @@
 {
   "name": "node-zookeeper-dubbo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "zookeeper",
+    "node",
+    "dubbo",
+    "javascript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/p412726700/node-zookeeper-dubbo"
   },
   "author": "pzc <412726700@qq.com>",
   "license": "ISC",
