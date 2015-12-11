@@ -32,7 +32,7 @@ service.excute(method,arguments,function(err,data){
   console.log(data)
 })
 ```
-you can use [js-to-java](!https://github.com/node-modules/js-to-java)
+you can use [!js-to-java](https://github.com/node-modules/js-to-java)
 ```javascript
 var arg1={$class:'int',$:123};
 //equivalent
