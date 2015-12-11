@@ -1,13 +1,13 @@
 # node-zookeeper-dubbo
 ### config
 #####env
-环境信息
+envirmoment
 #####conn
-zookeeper 连接地址
+zookeeper conn url
 #####path
-所需服务
+the service you need
 #####version
-dubbo版本
+dubbo version
 
 ###Example
 ```javascript
@@ -32,6 +32,13 @@ service.excute(method,arguments,function(err,data){
   console.log(data)
 })
 ```
+you can use [!https://github.com/node-modules/js-to-java](js-to-java)
+```javascript
+var arg1={$class:'int',$:123};
+//equivalent
+var arg1=java('int',123);
+```
+
 
 
 
