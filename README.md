@@ -2,16 +2,16 @@
 nodejs connect dubbo by default protocol in zookeeper
 
 ### config
-#####env
+##### env
 envirmoment
-#####conn
+##### conn
 zookeeper conn url
-#####path
+##### path
 the service you need
-#####version
+##### version
 dubbo version
 
-###Example
+### Example
 ```javascript
 var Service=require('node-zookeeper-dubbo');
 

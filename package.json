@@ -1,12 +1,12 @@
 {
-  "name": "node-dubbo",
-  "version": "1.0.0",
+  "name": "node-zookeeper-dubbo",
+  "version": "1.0.1",
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "pzc <412726700@qq.com>",
   "license": "ISC",
   "dependencies": {
     "hessian.js": "^2.1.4",
