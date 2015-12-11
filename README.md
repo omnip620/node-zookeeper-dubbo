@@ -10,6 +10,7 @@ zookeeper 连接地址
 dubbo版本
 
 ###Example
+```javascript
 var Service=require('node-zookeeper-dubbo');
 
 var opt={
@@ -30,8 +31,7 @@ service.excute(method,arguments,function(err,data){
   }
   console.log(data)
 })
-
-
+```
 
 
 
