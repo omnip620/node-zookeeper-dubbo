@@ -1,8 +1,6 @@
 # node-zookeeper-dubbo
 nodejs connect dubbo by default protocol in zookeeper
 
-[![NPM Version][npm-image]][npm-url]
-
 ### config
 ##### env
 envirmoment
