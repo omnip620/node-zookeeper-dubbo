@@ -1,6 +1,6 @@
-var net     = require('net');
-var buffer  = require('buffer');
-var hessian = require('hessian.js');
+var net       = require('net');
+var buffer    = require('buffer');
+var hessian   = require('hessian.js');
 var url       = require('url');
 var zookeeper = require('node-zookeeper-client');
 var qs        = require('querystring');
@@ -80,7 +80,7 @@ Service.prototype.excute = function (method, arguments, cb) {
       if (arg.hasOwnProperty('$class')) {
         var type = arg['$class'];
         if (~type.indexOf('.')) {
-          _parameterTypes += 'L' + arg['$class'].replace(/\./gi, '/') + ';';
+          _parameterTypes += 'L' + type.replace(/\./gi, '/') + ';';
         }
         else {
           switch (type) {
@@ -171,9 +171,11 @@ Service.prototype.bufferBody = function (method, type, args) {
   encoder.write(this._env);
   encoder.write(method);
   encoder.write(type);
-  for (var i = 0, len = args.length; i < len; ++i) {
-    var arg = args[i];
-    encoder.write(arg);
+  if (args && args.length) {
+    for (var i = 0, len = args.length; i < len; ++i) {
+      var arg = args[i];
+      encoder.write(arg);
+    }
   }
 
   encoder.write(this._attchments);
@@ -181,7 +183,6 @@ Service.prototype.bufferBody = function (method, type, args) {
 
   return encoder;
 };
-
 
 module.exports = Service;
 
