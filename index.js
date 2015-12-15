@@ -5,9 +5,10 @@ var url       = require('url');
 var zookeeper = require('node-zookeeper-client');
 var qs        = require('querystring');
 
-var ZK = function (conn, path) {
+var ZK = function (conn, path, env) {
   this.conn = conn;
   this.path = '/dubbo/' + path + '/providers';
+  this.env  = env;
 };
 
 ZK.prototype.connect = function (conn) {
@@ -42,7 +43,15 @@ ZK.prototype.getZoo = function (cb) {
       cb(err);
       return;
     }
-    zoo       = qs.parse(decodeURIComponent(children[0]));
+    if (children && children.length) {
+      for (var i = 0, l = children.length; i < l; i++) {
+        zoo = qs.parse(decodeURIComponent(children[i]));
+        if (zoo.version == self.env) {
+          break;
+        }
+      }
+    }
+
     urlparsed = url.parse(Object.keys(zoo)[0]);
     cb(null, {host: urlparsed.hostname, port: urlparsed.port});
     self.client.close();
@@ -64,7 +73,7 @@ var Service = function (opt) {
       timeout:   '60000'
     }
   };
-  this.zoo         = new ZK(opt.conn, opt.path);
+  this.zoo         = new ZK(opt.conn, this._path, this._env);
 };
 
 Service.prototype.excute = function (method, arguments, cb) {
