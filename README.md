@@ -1,9 +1,8 @@
 # node-zookeeper-dubbo
 nodejs connect dubbo by default protocol in zookeeper
-[npm-image]: http://img.shields.io/npm/v/node-zookeeper-dubbo.svg?style=flat-square
-[npm-url]: https://npmjs.org/package/node-zookeeper-dubbo?style=flat-square
-[downloads-image]: http://img.shields.io/npm/dm/node-zookeeper-dubbo.svg?style=flat-square
-[![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url]
+
+[![NPM version][npm-image]][npm-url]
+[![Downloads][downloads-image]][npm-url]
 
 ### config
 ##### env
@@ -57,6 +56,6 @@ var arg1=java('int',123);
 
 
 
-
-
-
+[npm-image]:http://img.shields.io/npm/v/node-zookeeper-dubbo.svg?style=flat-square
+[npm-url]:https://npmjs.org/package/node-zookeeper-dubbo?style=flat-square
+[downloads-image]:http://img.shields.io/npm/dm/node-zookeeper-dubbo.svg?style=flat-square
