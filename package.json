@@ -21,5 +21,13 @@
   "dependencies": {
     "hessian.js": "^2.1.4",
     "node-zookeeper-client": "^0.2.2"
+  },
+  "java": {
+    "dependencies": [
+    ]
+  },
+  "jscsConfig": {
+    "preset": "node-style-guide",
+    "validateQuoteMarks": null
   }
 }
