@@ -28,7 +28,6 @@ ZK.prototype.getZoo = function (cb) {
   this.client.once('connected', connect);
 
   function connect() {
-
     self.client.getChildren(self.path, handleEvent, handleResult);
   }
 
@@ -51,7 +50,6 @@ ZK.prototype.getZoo = function (cb) {
         }
       }
     }
-
     urlparsed = url.parse(Object.keys(zoo)[0]);
     cb(null, {host: urlparsed.hostname, port: urlparsed.port});
     self.client.close();
