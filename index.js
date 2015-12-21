@@ -143,7 +143,8 @@ Service.prototype.excute = function (method, arguments, cb) {
 
     client.on('data', function (data) {
       var buf = new hessian.DecoderV2(data.slice(17, data.length - 1));
-      cb(null, buf.read());
+
+      cb(null, JSON.stringify(buf.read()));
       client.destroy();
     });
 
