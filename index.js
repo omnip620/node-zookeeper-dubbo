@@ -6,9 +6,10 @@ var zookeeper = require('node-zookeeper-client');
 var qs        = require('querystring');
 
 var ZK = function (conn, path, env) {
-  this.conn = conn;
-  this.path = '/dubbo/' + path + '/providers';
-  this.env  = env;
+  this.conn    = conn;
+  this.path    = '/dubbo/' + path + '/providers';
+  this.env     = env;
+  this.methods = [];
 };
 
 ZK.prototype.connect = function (conn) {
@@ -50,7 +51,8 @@ ZK.prototype.getZoo = function (cb) {
         }
       }
     }
-    urlparsed = url.parse(Object.keys(zoo)[0]);
+    urlparsed    = url.parse(Object.keys(zoo)[0]);
+    self.methods = zoo.methods.split(',');
     cb(null, {host: urlparsed.hostname, port: urlparsed.port});
     self.client.close();
   }
@@ -80,6 +82,7 @@ Service.prototype.excute = function (method, arguments, cb) {
   var _parameterTypes = '';
   var _arguments      = arguments;
   var buffer;
+
 
   if (_arguments.length) {
     for (var i = 0, l = arguments.length; i < l; i++) {
@@ -123,8 +126,10 @@ Service.prototype.excute = function (method, arguments, cb) {
 
 
   this.zoo.getZoo(zooData);
+  var self = this;
 
   function zooData(err, zoo) {
+
     var client = new net.Socket();
 
     var host, port;
@@ -136,6 +141,9 @@ Service.prototype.excute = function (method, arguments, cb) {
     host = zoo.host;
     port = zoo.port;
 
+    if (!~self.zoo.methods.indexOf(_method)) {
+      throw new SyntaxError("can't find this method, pls check it!")
+    }
 
     client.connect(port, host, function () {
       client.write(buffer);
