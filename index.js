@@ -150,9 +150,19 @@ Service.prototype.excute = function (method, arguments, cb) {
     });
 
     client.on('data', function (data) {
-      var buf = new hessian.DecoderV2(data.slice(17, data.length - 1));
+      var response;
 
-      cb(null, JSON.stringify(buf.read()));
+      if (data[3] === 70) {
+        response = data.slice(19, data.length - 1).toString()
+      }
+      else if (data[15] === 3) {
+        response = 'void return';
+      }
+      else {
+        var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
+        response = JSON.stringify(buf.read());
+      }
+      cb(null, response);
       client.destroy();
     });
 
@@ -193,7 +203,6 @@ Service.prototype.bufferBody = function (method, type, args) {
       encoder.write(arg);
     }
   }
-
   encoder.write(this._attchments);
   encoder = encoder.byteBuffer._bytes.slice(0, encoder.byteBuffer._offset);
 
