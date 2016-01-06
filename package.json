@@ -20,12 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "hessian.js": "^2.1.4",
-    "java": "^0.6.0",
-    "node-java-maven": "0.0.11",
     "node-zookeeper-client": "^0.2.2"
-  },
-  "java": {
-    "dependencies": []
   },
   "jscsConfig": {
     "preset": "node-style-guide",
