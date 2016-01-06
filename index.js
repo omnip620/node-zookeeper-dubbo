@@ -51,6 +51,7 @@ ZK.prototype.getZoo = function (cb) {
         }
       }
     }
+
     urlparsed    = url.parse(Object.keys(zoo)[0]);
     self.methods = zoo.methods.split(',');
     cb(null, {host: urlparsed.hostname, port: urlparsed.port});
@@ -66,11 +67,11 @@ var Service = function (opt) {
 
   this._attchments = {
     $class: 'java.util.HashMap',
-    $:      {
-      path:      this._path,
+    $     : {
+      path     : this._path,
       interface: this._path,
-      version:   this._env,
-      timeout:   '60000'
+      version  : this._env,
+      timeout  : '60000'
     }
   };
   this.zoo         = new ZK(opt.conn, this._path, this._env);
@@ -118,12 +119,9 @@ Service.prototype.excute = function (method, arguments, cb) {
     }
   }
 
-  if (_arguments.length) {
-    buffer = this.buffer(_method, _parameterTypes, _arguments);
-  } else {
-    buffer = this.buffer(_method, '');
-  }
-
+  buffer = _arguments.length ?
+    this.buffer(_method, _parameterTypes, _arguments) :
+    this.buffer(_method, '');
 
   this.zoo.getZoo(zooData);
   var self = this;
@@ -134,7 +132,6 @@ Service.prototype.excute = function (method, arguments, cb) {
 
     var host, port;
     if (err) {
-
       cb(err);
       return;
     }
@@ -150,10 +147,9 @@ Service.prototype.excute = function (method, arguments, cb) {
     });
 
     client.on('data', function (data) {
-      var response;
-
+      var err = null, response = null;
       if (data[3] === 70) {
-        response = data.slice(19, data.length - 1).toString()
+        err = data.slice(19, data.length - 1).toString()
       }
       else if (data[15] === 3) {
         response = 'void return';
@@ -162,7 +158,7 @@ Service.prototype.excute = function (method, arguments, cb) {
         var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
         response = JSON.stringify(buf.read());
       }
-      cb(null, response);
+      cb(err, response);
       client.destroy();
     });
 
@@ -175,13 +171,12 @@ Service.prototype.buffer = function (method, type, arguments) {
   var bufferBody = this.bufferBody(method, type, arguments);
   var bufferHead = this.bufferHead(bufferBody.length);
   return Buffer.concat([bufferHead, bufferBody]);
-
 };
 
 Service.prototype.bufferHead = function (length) {
   var head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   if (length - 256 > 0) {
-    head.splice(14, 1, Math.floor(length / 256));
+    head.splice(14, 1, length / 256 | 0);
     head.splice(15, 1, length % 256);
   } else {
     head.splice(15, 1, length - 256)
@@ -199,8 +194,7 @@ Service.prototype.bufferBody = function (method, type, args) {
   encoder.write(type);
   if (args && args.length) {
     for (var i = 0, len = args.length; i < len; ++i) {
-      var arg = args[i];
-      encoder.write(arg);
+      encoder.write(args[i]);
     }
   }
   encoder.write(this._attchments);
