@@ -78,11 +78,11 @@ var Service = function (opt) {
   this.zoo         = new ZK(opt.conn, this._path, this._env);
 };
 
-Service.prototype.excute = function (method, arguments, cb) {
+Service.prototype.excute = function (method, args, cb) {
 
   var _method         = method;
   var _parameterTypes = '';
-  var _arguments      = arguments;
+  var _arguments      = args;
   var buffer;
 
 
@@ -168,8 +168,8 @@ Service.prototype.excute = function (method, arguments, cb) {
   }
 };
 
-Service.prototype.buffer = function (method, type, arguments) {
-  var bufferBody = this.bufferBody(method, type, arguments);
+Service.prototype.buffer = function (method, type, args) {
+  var bufferBody = this.bufferBody(method, type, args);
   var bufferHead = this.bufferHead(bufferBody.length);
   return Buffer.concat([bufferHead, bufferBody]);
 };
