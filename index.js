@@ -38,7 +38,7 @@ ZK.prototype.getZoo = function (cb) {
     self.getZoo();
   }
 
-  function handleResult(err, children, stat) {
+  function handleResult(err, children) {
     var zoo, urlparsed;
     if (err) {
       cb(err);
@@ -47,7 +47,7 @@ ZK.prototype.getZoo = function (cb) {
     if (children && children.length) {
       for (var i = 0, l = children.length; i < l; i++) {
         zoo = qs.parse(decodeURIComponent(children[i]));
-        if (zoo.version == self.env) {
+        if (zoo.version === self.env) {
           break;
         }
       }
@@ -79,50 +79,28 @@ var Service = function (opt) {
 };
 
 Service.prototype.excute = function (method, args, cb) {
-
   var _method         = method;
   var _parameterTypes = '';
   var _arguments      = args;
-  var buffer;
+  var buffer, type, typeRef;
 
+  typeRef = {
+    boolean: 'Z', int: 'I', short: 'S',
+    long   : 'J', double: 'D', float: 'F'
+  };
 
   if (_arguments.length) {
-    for (var i = 0, l = arguments.length; i < l; i++) {
-      var arg = _arguments[i];
-      if (arg.hasOwnProperty('$class')) {
-        var type = arg['$class'];
-        if (~type.indexOf('.')) {
-          _parameterTypes += 'L' + type.replace(/\./gi, '/') + ';';
-        }
-        else {
-          switch (type) {
-            case 'boolean':
-              _parameterTypes += 'Z';
-              break;
-            case 'int':
-              _parameterTypes += 'I';
-              break;
-            case 'short':
-              _parameterTypes += 'S';
-              break;
-            case 'long':
-              _parameterTypes += 'J';
-              break;
-            case 'double':
-              _parameterTypes += 'D';
-              break;
-            case 'float':
-              _parameterTypes += 'F';
-              break;
-          }
-        }
-      }
+    for (var i = 0, l = _arguments.length; i < l; i++) {
+      type = _arguments[i]['$class'];
+      _parameterTypes
+        += type && ~type.indexOf('.')
+        ? 'L' + type.replace(/\./gi, '/') + ';'
+        : typeRef[type];
     }
+    buffer = this.buffer(_method, _parameterTypes, _arguments);
+  } else {
+    buffer = this.buffer(_method, '');
   }
-
-  buffer = _arguments.length ?
-    this.buffer(_method, _parameterTypes, _arguments) :
-    this.buffer(_method, '');
 
   this.zoo.getZoo(zooData);
   var self = this;
@@ -140,7 +118,7 @@ Service.prototype.excute = function (method, args, cb) {
     port = zoo.port;
 
     if (!~self.zoo.methods.indexOf(_method)) {
-      throw new SyntaxError("can't find this method, pls check it!")
+      throw new SyntaxError("can't find this method, pls check it!");
     }
 
     client.connect(port, host, function () {
@@ -150,14 +128,12 @@ Service.prototype.excute = function (method, args, cb) {
     client.on('data', function (data) {
       var err = null, response = null;
       if (data[3] === 70) {
-        err = data.slice(19, data.length - 1).toString()
-      }
-      else if (data[15] === 3) {
-        response = 'void return';
-      }
-      else {
+        err = data.slice(19, data.length - 1).toString();
+      } else if (data[15] !== 3) {
         var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
         response = JSON.stringify(buf.read());
+      } else {
+        response = 'void return';
       }
       cb(err, response);
       client.destroy();
@@ -180,7 +156,7 @@ Service.prototype.bufferHead = function (length) {
     head.splice(14, 1, length / 256 | 0);
     head.splice(15, 1, length % 256);
   } else {
-    head.splice(15, 1, length - 256)
+    head.splice(15, 1, length - 256);
   }
   return new Buffer(head);
 };
