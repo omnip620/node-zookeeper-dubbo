@@ -126,16 +126,18 @@ Service.prototype.excute = function (method, args, cb) {
     });
 
     client.on('data', function (data) {
-      var err = null, response = null;
+      var response;
       if (data[3] === 70) {
-        err = data.slice(19, data.length - 1).toString();
-      } else if (data[15] !== 3) {
-        var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
-        response = JSON.stringify(buf.read());
-      } else {
+        response = data.slice(19, data.length - 1).toString()
+      }
+      else if (data[15] === 3) {
         response = 'void return';
       }
-      cb(err, response);
+      else {
+        var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
+        response = JSON.stringify(buf.read());
+      }
+      cb(null, response);
       client.destroy();
     });
 
