@@ -6,6 +6,8 @@ var url       = require('url');
 var zookeeper = require('node-zookeeper-client');
 var qs        = require('querystring');
 
+var utils = require('./utils');
+
 var ZK = function (conn, path, env) {
   this.conn    = conn;
   this.path    = '/dubbo/' + path + '/providers';
@@ -101,49 +103,49 @@ Service.prototype.excute = function (method, args, cb) {
   } else {
     buffer = this.buffer(_method, '');
   }
-
-  this.zoo.getZoo(zooData);
   var self = this;
 
-  function zooData(err, zoo) {
+  return new Promise(function (resolve, reject) {
+    self.zoo.getZoo(zooData);
+    function zooData(err, zoo) {
+      var client = new net.Socket();
 
-    var client = new net.Socket();
+      var host, port;
+      if (err) {
+        reject(err);
+        return;
+      }
+      host = zoo.host;
+      port = zoo.port;
 
-    var host, port;
-    if (err) {
-      cb(err);
-      return;
+      if (!~self.zoo.methods.indexOf(_method)) {
+        throw new SyntaxError("can't find this method, pls check it!");
+      }
+
+      client.connect(port, host, function () {
+        client.write(buffer);
+      });
+
+      client.on('data', function (data) {
+        var response;
+        if (data[3] === 70) {
+          response = data.slice(19, data.length - 1).toString();
+        }
+        else if (data[15] === 3) {
+          response = 'void return';
+        }
+        else {
+          var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
+          response = JSON.stringify(buf.read());
+        }
+        resolve(response);
+        client.destroy();
+      });
+
+      client.on('close', function () {
+      });
     }
-    host = zoo.host;
-    port = zoo.port;
-
-    if (!~self.zoo.methods.indexOf(_method)) {
-      throw new SyntaxError("can't find this method, pls check it!");
-    }
-
-    client.connect(port, host, function () {
-      client.write(buffer);
-    });
-
-    client.on('data', function (data) {
-      var response;
-      if (data[3] === 70) {
-        response = data.slice(19, data.length - 1).toString()
-      }
-      else if (data[15] === 3) {
-        response = 'void return';
-      }
-      else {
-        var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
-        response = JSON.stringify(buf.read());
-      }
-      cb(null, response);
-      client.destroy();
-    });
-
-    client.on('close', function () {
-    });
-  }
+  }).nodeify(cb);
 };
 
 Service.prototype.buffer = function (method, type, args) {
