@@ -140,7 +140,7 @@ Service.prototype.excute = function (method, args, cb) {
           bl += l * Math.pow(255, i++);
           l = arr.pop();
         }
-        bl += 17;
+        bl += 16;
       }
 
       client.on('data', function (chunk) {
