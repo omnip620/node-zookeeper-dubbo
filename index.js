@@ -108,7 +108,10 @@ Service.prototype.excute = function (method, args, cb) {
   return new Promise(function (resolve, reject) {
     self.zoo.getZoo(zooData);
     function zooData(err, zoo) {
-      var client = new net.Socket();
+      var client   = new net.Socket();
+      var chunks   = [];
+      var bl       = 0;
+      var response = null, resData;
 
       var host, port;
       if (err) {
@@ -126,24 +129,44 @@ Service.prototype.excute = function (method, args, cb) {
         client.write(buffer);
       });
 
-      client.on('data', function (data) {
-        var response;
-        if (data[3] === 70) {
-          response = data.slice(19, data.length - 1).toString();
-        }
-        else if (data[15] === 3) {
-          response = 'void return';
-        }
-        else {
-          var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
-          response = JSON.stringify(buf.read());
-        }
-        resolve(response);
-        client.destroy();
+      client.on('drain', function () {
+        console.log('fire drain');
       });
 
-      client.on('close', function () {
+      function getLength(arr) {
+        var l = arr.pop();
+        var i = 0;
+        while (l) {
+          bl += l * Math.pow(255, i++);
+          l = arr.pop();
+        }
+        bl += 17;
+      }
+
+      client.on('data', function (chunk) {
+        if (!chunks.length) {
+          getLength([].slice.call(chunk.slice(0, 16), 0));
+        }
+        chunks.push(chunk);
+        resData = Buffer.concat(chunks);
+        if (resData.length >= bl) {
+          if (resData[3] === 70) {
+            response = resData.slice(19, resData.length - 1).toString();
+          }
+          else if (resData[15] === 3) {
+            response = 'void return';
+          }
+          else {
+            var buf  = new hessian.DecoderV2(resData.slice(17, resData.length - 1));
+            response = JSON.stringify(buf.read());
+          }
+          resolve(response);
+          client.destroy();
+        }
       });
+//      client.on('close', function (data) {
+//        console.log('close');
+//      });
     }
   }).nodeify(cb);
 };
