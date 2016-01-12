@@ -1,6 +1,6 @@
 {
   "name": "node-zookeeper-dubbo",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
