@@ -150,23 +150,22 @@ Service.prototype.excute = function (method, args, cb) {
         chunks.push(chunk);
         resData = Buffer.concat(chunks);
         if (resData.length >= bl) {
-          if (resData[3] === 70) {
-            response = resData.slice(19, resData.length - 1).toString();
-          }
-          else if (resData[15] === 3) {
-            response = 'void return';
-          }
-          else {
-            var buf  = new hessian.DecoderV2(resData.slice(17, resData.length - 1));
-            response = JSON.stringify(buf.read());
-          }
-          resolve(response);
           client.destroy();
         }
       });
-//      client.on('close', function (data) {
-//        console.log('close');
-//      });
+      client.on('close', function () {
+        if (resData[3] === 70) {
+          response = resData.slice(19, resData.length - 1).toString();
+        }
+        else if (resData[15] === 3) {
+          response = 'void return';
+        }
+        else {
+          var buf  = new hessian.DecoderV2(resData.slice(17, resData.length - 1));
+          response = JSON.stringify(buf.read());
+        }
+        resolve(response);
+      });
     }
   }).nodeify(cb);
 };
