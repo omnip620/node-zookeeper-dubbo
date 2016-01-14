@@ -110,7 +110,7 @@ Service.prototype.excute = function (method, args, cb) {
     function zooData(err, zoo) {
       var client   = new net.Socket();
       var chunks   = [];
-      var bl       = 0;
+      var bl       = 16;
       var response = null, resData;
 
       var host, port;
@@ -133,19 +133,13 @@ Service.prototype.excute = function (method, args, cb) {
         console.log('fire drain');
       });
 
-      function getLength(arr) {
-        var l = arr.pop();
-        var i = 0;
-        while (l) {
-          bl += l * Math.pow(255, i++);
-          l = arr.pop();
-        }
-        bl += 16;
-      }
-
       client.on('data', function (chunk) {
         if (!chunks.length) {
-          getLength([].slice.call(chunk.slice(0, 16), 0));
+          var arr=[].slice.call(chunk.slice(0, 16), 0);
+          var l=null,i = 0;
+          while (l = arr.pop()) {
+            bl += l * Math.pow(255, i++);
+          }
         }
         chunks.push(chunk);
         resData = Buffer.concat(chunks);
