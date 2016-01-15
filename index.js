@@ -38,8 +38,13 @@ ZK.prototype.getZoo = function (path, cb) {
 //  function connect() {
 //    self.client.getChildren(self.path, handleEvent, handleResult);
 //  }
-  self.client.getChildren(self.path, handleEvent, handleResult);
 
+
+
+  self.client.getChildren(self.path, handleResult);
+//  self.client.getData(self.path, function (event) {
+//      console.log('Got event: %s.', event);
+//    })
   function handleEvent(event) {
     console.log('Got watcher event: %s', event);
     self.getZoo();
