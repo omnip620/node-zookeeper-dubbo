@@ -40,7 +40,6 @@ ZK.prototype.getZoo = function (path, cb) {
 //  }
 
 
-
   self.client.getChildren(self.path, handleResult);
 //  self.client.getData(self.path, function (event) {
 //      console.log('Got event: %s.', event);
@@ -122,7 +121,8 @@ Service.prototype.excute = function (method, args, cb) {
       var host     = zoo.host;
       var port     = zoo.port;
       var response = null;
-      var data;
+//      var data     = new Buffer([]);
+      var chunks = [], resData;
 
       if (err) {
         reject(err);
@@ -137,33 +137,36 @@ Service.prototype.excute = function (method, args, cb) {
         client.write(buffer);
       });
 
-      client.on('drain', function () {
-        console.log('fire drain');
-      });
+      function getLength(arr) {
+        var l = arr.pop();
+        var i = 0;
+        while (l) {
+          bl += l * Math.pow(255, i++);
+          l = arr.pop();
+        }
+      }
 
       client.on('data', function (chunk) {
-        if (!data) {
-          data     = chunk;
-          let arr  = [].slice.call(chunk.slice(0, 16), 0);
-          let l, i = 0;
-          while (l = arr.pop()) {
-            bl += l * Math.pow(255, i++);
-          }
+        if (!chunks.length) {
+          getLength([].slice.call(chunk.slice(0, 16), 0));
         }
-        data = Buffer.concat([data, chunk], data.length + chunk.length);
-        if (data.length >= bl) {
+
+        chunks.push(chunk);
+        resData = Buffer.concat(chunks);
+        if (resData.length >= bl) {
           client.destroy();
         }
+
       });
       client.on('close', function () {
-        if (data[3] === 70) {
-          response = data.slice(19, data.length - 1).toString();
+        if (resData[3] === 70) {
+          response = resData.slice(19, resData.length - 1).toString();
         }
-        else if (data[15] === 3) {
+        else if (resData[15] === 3) {
           response = 'void return';
         }
         else {
-          var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
+          var buf  = new hessian.DecoderV2(resData.slice(17, resData.length - 1));
           response = JSON.stringify(buf.read());
         }
         resolve(response);
