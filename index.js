@@ -1,39 +1,45 @@
 'use strict';
-var net       = require('net');
-var buffer    = require('buffer');
-var hessian   = require('hessian.js');
-var url       = require('url');
-var zookeeper = require('node-zookeeper-client');
-var qs        = require('querystring');
-
-var utils = require('./utils');
+const net       = require('net');
+const hessian   = require('hessian.js');
+const url       = require('url');
+const zookeeper = require('node-zookeeper-client');
+const qs        = require('querystring');
+require('./utils');
 
 var ZK = function (conn, path, env) {
+
+  if (typeof ZK.instance === 'object') {
+    return ZK.instance;
+  }
+
   this.conn    = conn;
   this.path    = '/dubbo/' + path + '/providers';
   this.env     = env;
   this.methods = [];
+  this.connect();
+
+  ZK.instance = this;
 };
 
 ZK.prototype.connect = function (conn) {
-
   !this.conn && (this.conn = conn);
-
   this.client = zookeeper.createClient(this.conn);
   this.client.connect();
+  this.client.once('connected', function connect() {
+    console.log('zookeeper connected');
+  });
+};
 
-
+ZK.prototype.close = function () {
+  this.client.close();
 };
 
 ZK.prototype.getZoo = function (cb) {
-  this.connect();
   var self = this;
-
-  this.client.once('connected', connect);
-
-  function connect() {
-    self.client.getChildren(self.path, handleEvent, handleResult);
-  }
+//  function connect() {
+//    self.client.getChildren(self.path, handleEvent, handleResult);
+//  }
+  self.client.getChildren(self.path, handleEvent, handleResult);
 
   function handleEvent(event) {
     console.log('Got watcher event: %s', event);
@@ -58,7 +64,6 @@ ZK.prototype.getZoo = function (cb) {
     urlparsed    = url.parse(Object.keys(zoo)[0]);
     self.methods = zoo.methods.split(',');
     cb(null, {host: urlparsed.hostname, port: urlparsed.port});
-    self.client.close();
   }
 };
 
@@ -109,17 +114,16 @@ Service.prototype.excute = function (method, args, cb) {
     self.zoo.getZoo(zooData);
     function zooData(err, zoo) {
       var client   = new net.Socket();
-      var chunks   = [];
       var bl       = 16;
-      var response = null, resData;
+      var host     = zoo.host;
+      var port     = zoo.port;
+      var response = null;
+      var data;
 
-      var host, port;
       if (err) {
         reject(err);
         return;
       }
-      host = zoo.host;
-      port = zoo.port;
 
       if (!~self.zoo.methods.indexOf(_method)) {
         throw new SyntaxError("can't find this method, pls check it!");
@@ -134,28 +138,28 @@ Service.prototype.excute = function (method, args, cb) {
       });
 
       client.on('data', function (chunk) {
-        if (!chunks.length) {
-          var arr=[].slice.call(chunk.slice(0, 16), 0);
-          var l=null,i = 0;
+        if (!data) {
+          data     = chunk;
+          let arr  = [].slice.call(chunk.slice(0, 16), 0);
+          let l, i = 0;
           while (l = arr.pop()) {
             bl += l * Math.pow(255, i++);
           }
         }
-        chunks.push(chunk);
-        resData = Buffer.concat(chunks);
-        if (resData.length >= bl) {
+        data = Buffer.concat([data, chunk], data.length + chunk.length);
+        if (data.length >= bl) {
           client.destroy();
         }
       });
       client.on('close', function () {
-        if (resData[3] === 70) {
-          response = resData.slice(19, resData.length - 1).toString();
+        if (data[3] === 70) {
+          response = data.slice(19, data.length - 1).toString();
         }
-        else if (resData[15] === 3) {
+        else if (data[15] === 3) {
           response = 'void return';
         }
         else {
-          var buf  = new hessian.DecoderV2(resData.slice(17, resData.length - 1));
+          var buf  = new hessian.DecoderV2(data.slice(17, data.length - 1));
           response = JSON.stringify(buf.read());
         }
         resolve(response);

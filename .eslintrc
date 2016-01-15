@@ -2,6 +2,9 @@
   "env": {
     "node": true
   },
+  "ecmaFeatures":{
+    "blockBindings":1
+  },
   "rules": {
     "array-bracket-spacing": [2, "never"],
     "block-scoped-var": 2,
