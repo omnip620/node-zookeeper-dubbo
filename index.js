@@ -6,14 +6,12 @@ const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
 require('./utils');
 
-var ZK = function (conn, path, env) {
+var ZK = function (conn, env) {
 
   if (typeof ZK.instance === 'object') {
     return ZK.instance;
   }
-
   this.conn    = conn;
-  this.path    = '/dubbo/' + path + '/providers';
   this.env     = env;
   this.methods = [];
   this.connect();
@@ -34,8 +32,9 @@ ZK.prototype.close = function () {
   this.client.close();
 };
 
-ZK.prototype.getZoo = function (cb) {
-  var self = this;
+ZK.prototype.getZoo = function (path, cb) {
+  this.path = '/dubbo/' + path + '/providers';
+  var self  = this;
 //  function connect() {
 //    self.client.getChildren(self.path, handleEvent, handleResult);
 //  }
@@ -82,7 +81,7 @@ var Service = function (opt) {
       timeout  : '60000'
     }
   };
-  this.zoo         = new ZK(opt.conn, this._path, this._env);
+  this.zoo         = new ZK(opt.conn, this._env);
 };
 
 Service.prototype.excute = function (method, args, cb) {
@@ -111,7 +110,7 @@ Service.prototype.excute = function (method, args, cb) {
   var self = this;
 
   return new Promise(function (resolve, reject) {
-    self.zoo.getZoo(zooData);
+    self.zoo.getZoo(self._path, zooData);
     function zooData(err, zoo) {
       var client   = new net.Socket();
       var bl       = 16;
