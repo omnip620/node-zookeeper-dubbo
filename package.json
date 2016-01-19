@@ -1,6 +1,6 @@
 {
   "name": "node-zookeeper-dubbo",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
@@ -25,5 +25,8 @@
   "jscsConfig": {
     "preset": "node-style-guide",
     "validateQuoteMarks": null
+  },
+  "devDependencies": {
+    "chai": "^3.4.1"
   }
 }

@@ -26,16 +26,28 @@ var opt={
 
 var method="getUserByID";
 var arg1={$class:'int',$:123}
-var arguments=[arg1];
+var args=[arg1];
 
 var service = new Service(opt);
-service.excute(method,arguments,function(err,data){
+service.excute(method,args,function(err,data){
   if(err){
     console.log(err);
     return;
   }
   console.log(data)
 })
+
+or
+
+service
+  .excute(method,args)
+  .then(function(data){
+    console.log(data);
+  })
+  .catch(function(err) {
+    console.log(data);
+  })
+
 ```
 you can use  [js-to-java](https://github.com/node-modules/js-to-java)
 ```javascript
@@ -43,6 +55,12 @@ var arg1={$class:'int',$:123};
 //equivalent
 var arg1=java('int',123);
 ```
+
+### Close zookeeper connection
+
+Default the zookeeper connection is keep-alive,you can call ```service.zoo.close()``` to close the connect;
+
+
 ### Contributors
 [PanEW](https://github.com/p412726700)
 

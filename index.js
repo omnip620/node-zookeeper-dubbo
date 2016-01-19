@@ -35,10 +35,6 @@ ZK.prototype.close = function () {
 ZK.prototype.getZoo = function (path, cb) {
   this.path = '/dubbo/' + path + '/providers';
   var self  = this;
-//  function connect() {
-//    self.client.getChildren(self.path, handleEvent, handleResult);
-//  }
-
 
   self.client.getChildren(self.path, handleResult);
 //  self.client.getData(self.path, function (event) {
@@ -121,7 +117,6 @@ Service.prototype.excute = function (method, args, cb) {
       var host     = zoo.host;
       var port     = zoo.port;
       var response = null;
-//      var data     = new Buffer([]);
       var chunks = [], resData;
 
       if (err) {
@@ -137,25 +132,18 @@ Service.prototype.excute = function (method, args, cb) {
         client.write(buffer);
       });
 
-      function getLength(arr) {
-        var l = arr.pop();
-        var i = 0;
-        while (l) {
-          bl += l * Math.pow(255, i++);
-          l = arr.pop();
-        }
-      }
-
       client.on('data', function (chunk) {
         if (!chunks.length) {
-          getLength([].slice.call(chunk.slice(0, 16), 0));
+          var arr  = [].slice.call(chunk.slice(0, 16));
+          var l, i = 0;
+          while (l = arr.pop()) {
+            bl += l * Math.pow(255, i++);
+          }
         }
 
         chunks.push(chunk);
         resData = Buffer.concat(chunks);
-        if (resData.length >= bl) {
-          client.destroy();
-        }
+        resData.length >= bl && client.destroy();
 
       });
       client.on('close', function () {
