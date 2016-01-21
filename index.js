@@ -117,7 +117,7 @@ Service.prototype.excute = function (method, args, cb) {
       var host     = zoo.host;
       var port     = zoo.port;
       var response = null;
-      var chunks = [], resData;
+      var chunks   = [], resData;
 
       if (err) {
         reject(err);
@@ -143,14 +143,15 @@ Service.prototype.excute = function (method, args, cb) {
 
         chunks.push(chunk);
         resData = Buffer.concat(chunks);
-        resData.length >= bl && client.destroy();
+        (resData.length >= bl) && client.destroy();
 
       });
       client.on('close', function () {
+
         if (resData[3] === 70) {
           response = resData.slice(19, resData.length - 1).toString();
         }
-        else if (resData[15] === 3) {
+        else if (resData[15] === 3 && resData.length < 20) {
           response = 'void return';
         }
         else {
