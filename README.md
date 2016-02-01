@@ -3,6 +3,7 @@ nodejs connect dubbo by default protocol in zookeeper
 
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][npm-url]
+[![Bitdeli Badge][trend-image]][trend-url]
 
 ### config
 ##### env
@@ -72,9 +73,10 @@ Default the zookeeper connection is keep-alive,you can call ```service.zoo.close
 
 [maochendong](https://github.com/maochendong)
 
-[![Bitdeli Badge]](https://bitdeli.com/free "Bitdeli Badge")
 
-[trend-image]:(https://d2weczhvl823v0.cloudfront.net/p412726700/node-zookeeper-dubbo/trend.png)
+
+[trend-image]:https://d2weczhvl823v0.cloudfront.net/p412726700/node-zookeeper-dubbo/trend.png
+[trend-url]:https://bitdeli.com/free
 [npm-image]:http://img.shields.io/npm/v/node-zookeeper-dubbo.svg?style=flat-square
 [npm-url]:https://npmjs.org/package/node-zookeeper-dubbo?style=flat-square
 [downloads-image]:http://img.shields.io/npm/dm/node-zookeeper-dubbo.svg?style=flat-square
