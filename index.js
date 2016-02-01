@@ -6,6 +6,14 @@ const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
 require('./utils');
 
+/**
+ * Create a zookeeper connection
+ *
+ * @param {String} conn
+ * @param {String} env
+ * @returns {Object} zoo
+ * @constructor
+ */
 var ZK = function (conn, env) {
 
   if (typeof ZK.instance === 'object') {
@@ -32,37 +40,39 @@ ZK.prototype.close = function () {
   this.client.close();
 };
 
+/**
+ * Get a zoo
+ *
+ * @param {String} path
+ * @param {Function} cb
+ */
+
 ZK.prototype.getZoo = function (path, cb) {
   this.path = '/dubbo/' + path + '/providers';
   var self  = this;
 
   self.client.getChildren(self.path, handleResult);
-//  self.client.getData(self.path, function (event) {
-//      console.log('Got event: %s.', event);
-//    })
-  function handleEvent(event) {
-    console.log('Got watcher event: %s', event);
-    self.getZoo();
-  }
-
   function handleResult(err, children) {
-    var zoo, urlparsed;
+    var zoo, urlParsed;
     if (err) {
-      cb(err);
-      return;
+      return cb(err);
     }
-    if (children && children.length) {
-      for (var i = 0, l = children.length; i < l; i++) {
-        zoo = qs.parse(decodeURIComponent(children[i]));
-        if (zoo.version === self.env) {
-          break;
-        }
+    if (children && !children.length) {
+      return cb('can\'t find zoo');
+    }
+
+    for (var i = 0, l = children.length; i < l; i++) {
+      zoo = qs.parse(decodeURIComponent(children[i]));
+      if (zoo.version === self.env) {
+        break;
       }
     }
-
-    urlparsed    = url.parse(Object.keys(zoo)[0]);
+    //Get the first zoo
+    urlParsed    = url.parse(Object.keys(zoo)[0]);
     self.methods = zoo.methods.split(',');
-    cb(null, {host: urlparsed.hostname, port: urlparsed.port});
+    cb(null, {host: urlParsed.hostname, port: urlParsed.port});
+
+
   }
 };
 
@@ -112,16 +122,15 @@ Service.prototype.excute = function (method, args, cb) {
   return new Promise(function (resolve, reject) {
     self.zoo.getZoo(self._path, zooData);
     function zooData(err, zoo) {
-      var client   = new net.Socket();
-      var bl       = 16;
-      var host     = zoo.host;
-      var port     = zoo.port;
-      var response = null;
-      var chunks   = [], resData;
+      var client = new net.Socket();
+      var bl     = 16;
+      var host   = zoo.host;
+      var port   = zoo.port;
+      var ret    = null;
+      var chunks = [], heap;
 
       if (err) {
-        reject(err);
-        return;
+        return reject(err);
       }
 
       if (!~self.zoo.methods.indexOf(_method)) {
@@ -140,25 +149,26 @@ Service.prototype.excute = function (method, args, cb) {
             bl += l * Math.pow(255, i++);
           }
         }
-
         chunks.push(chunk);
-        resData = Buffer.concat(chunks);
-        (resData.length >= bl) && client.destroy();
-
+        heap = Buffer.concat(chunks);
+        (heap.length >= bl) && client.destroy();
       });
       client.on('close', function () {
-
-        if (resData[3] === 70) {
-          response = resData.slice(19, resData.length - 1).toString();
+        if (heap[3] === 70) {
+          ret = heap.slice(19, heap.length - 1).toString();
         }
-        else if (resData[15] === 3 && resData.length < 20) {
-          response = 'void return';
+        else if (heap[15] === 3 && heap.length < 20) {
+          ret = 'void return';
         }
         else {
-          var buf  = new hessian.DecoderV2(resData.slice(17, resData.length - 1));
-          response = JSON.stringify(buf.read());
+          var buf  = new hessian.DecoderV2(heap.slice(17, heap.length - 1));
+          var _ret = buf.read();
+          if (_ret instanceof Error) {
+            return reject(_ret);
+          }
+          ret = JSON.stringify(_ret);
         }
-        resolve(response);
+        resolve(ret);
       });
     }
   }).nodeify(cb);
