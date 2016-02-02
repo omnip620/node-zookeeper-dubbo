@@ -12,6 +12,8 @@ require('./utils');
  * @param {String} conn
  * @param {String} env
  * @returns {Object} zoo
+ *
+ *
  * @constructor
  */
 var ZK = function (conn, env) {
@@ -161,9 +163,10 @@ Service.prototype.excute = function (method, args, cb) {
           ret = 'void return';
         }
         else {
-          var buf  = new hessian.DecoderV2(heap.slice(17, heap.length - 1));
+          var offset = heap[16] === 145 ? 17 : 18; //判断传入参数是否有误
+          var buf  = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
           var _ret = buf.read();
-          if (_ret instanceof Error) {
+          if (_ret instanceof Error || offset === 18) {
             return reject(_ret);
           }
           ret = JSON.stringify(_ret);
