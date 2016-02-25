@@ -19,7 +19,6 @@
   "author": "pzc <412726700@qq.com>",
   "license": "ISC",
   "dependencies": {
-    "benchmark": "^2.1.0",
     "hessian.js": "^2.1.4",
     "node-zookeeper-client": "^0.2.2"
   },
