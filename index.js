@@ -6,6 +6,9 @@ const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
 require('./utils');
 
+const DEFAULT_LEN = 8 * 1024 * 1024;
+
+
 /**
  * Create a zookeeper connection
  *
@@ -159,13 +162,13 @@ Service.prototype.excute = function (method, args, cb) {
         if (heap[3] === 70) {
           ret = heap.slice(19, heap.length - 1).toString();
         }
-        else if (heap[15] === 3 && heap.length < 20) {
+        else if (heap[15] === 3 && heap.length < 20) {//判断是否没有返回值
           ret = 'void return';
         }
         else {
           var offset = heap[16] === 145 ? 17 : 18; //判断传入参数是否有误
-          var buf  = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
-          var _ret = buf.read();
+          var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
+          var _ret   = buf.read();
           if (_ret instanceof Error || offset === 18) {
             return reject(_ret);
           }
@@ -185,11 +188,20 @@ Service.prototype.buffer = function (method, type, args) {
 
 Service.prototype.bufferHead = function (length) {
   var head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  if (length - 256 > 0) {
-    head.splice(14, 1, length / 256 | 0);
-    head.splice(15, 1, length % 256);
+  var i    = 15;
+
+  if (length > DEFAULT_LEN) {
+    throw new Error(`Data length too large: ${length}, max payload: ${DEFAULT_LEN}`);
+  }
+  //构造body长度信息
+  if (length - 256 < 0) {
+    head.splice(i, 1, length - 256);
   } else {
-    head.splice(15, 1, length - 256);
+    while (length - 256 > 0) {
+      head.splice(i--, 1, length % 256);
+      length = length / 256 | 0;
+    }
+    head.splice(i--, 1, length);
   }
   return new Buffer(head);
 };
@@ -212,6 +224,7 @@ Service.prototype.bufferBody = function (method, type, args) {
 
   return encoder;
 };
+
 
 module.exports = Service;
 
