@@ -37,7 +37,7 @@ ZK.prototype.connect = function (conn) {
   this.client = zookeeper.createClient(this.conn);
   this.client.connect();
   this.client.once('connected', function connect() {
-    console.log('\x1b[32m', 'yeah zookeeper connected!');
+    console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
   });
 };
 
