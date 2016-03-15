@@ -6,8 +6,8 @@ const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
 require('./utils');
 
+// 默认body最大长度
 const DEFAULT_LEN = 8 * 1024 * 1024;
-
 
 /**
  * Create a zookeeper connection
@@ -20,7 +20,6 @@ const DEFAULT_LEN = 8 * 1024 * 1024;
  * @constructor
  */
 var ZK = function (conn, env) {
-
   if (typeof ZK.instance === 'object') {
     return ZK.instance;
   }
@@ -63,27 +62,23 @@ ZK.prototype.getZoo = function (path, cb) {
       return cb(err);
     }
     if (children && !children.length) {
-      return cb('can\'t find zoo');
+      return cb('can\'t find zoo,pls check dubbo service!');
     }
-
     for (var i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]));
       if (zoo.version === self.env) {
         break;
       }
     }
-    //Get the first zoo
+    // Get the first zoo
     urlParsed    = url.parse(Object.keys(zoo)[0]);
     self.methods = zoo.methods.split(',');
     cb(null, {host: urlParsed.hostname, port: urlParsed.port});
-
-
   }
 };
 
-
 var Service = function (opt) {
-  this._version = opt.version || '2.5.3.3';
+  this._version = opt.version || '2.5.3.4';
   this._path    = opt.path;
   this._env     = opt.env.toUpperCase();
 
@@ -113,8 +108,7 @@ Service.prototype.excute = function (method, args, cb) {
   if (_arguments.length) {
     for (var i = 0, l = _arguments.length; i < l; i++) {
       type = _arguments[i]['$class'];
-      _parameterTypes
-        += type && ~type.indexOf('.')
+      _parameterTypes += type && ~type.indexOf('.')
         ? 'L' + type.replace(/\./gi, '/') + ';'
         : typeRef[type];
     }
@@ -127,19 +121,23 @@ Service.prototype.excute = function (method, args, cb) {
   return new Promise(function (resolve, reject) {
     self.zoo.getZoo(self._path, zooData);
     function zooData(err, zoo) {
+      if (err) {
+        return reject(err);
+      }
       var client = new net.Socket();
       var bl     = 16;
       var host   = zoo.host;
       var port   = zoo.port;
       var ret    = null;
-      var chunks = [], heap;
+      var chunks = [];
+      var heap;
 
       if (err) {
         return reject(err);
       }
 
       if (!~self.zoo.methods.indexOf(_method)) {
-        throw new SyntaxError("can't find this method, pls check it!");
+        throw new SyntaxError("can't find the method, pls check it!");
       }
 
       client.connect(port, host, function () {
@@ -148,9 +146,10 @@ Service.prototype.excute = function (method, args, cb) {
 
       client.on('data', function (chunk) {
         if (!chunks.length) {
-          var arr  = [].slice.call(chunk.slice(0, 16));
-          var l, i = 0;
-          while (l = arr.pop()) {
+          var arr = [].slice.call(chunk.slice(0, 16));
+          var l;
+          var i   = 0;
+          while ((l = arr.pop())) {
             bl += l * Math.pow(255, i++);
           }
         }
@@ -161,12 +160,10 @@ Service.prototype.excute = function (method, args, cb) {
       client.on('close', function () {
         if (heap[3] === 70) {
           ret = heap.slice(19, heap.length - 1).toString();
-        }
-        else if (heap[15] === 3 && heap.length < 20) {//判断是否没有返回值
+        } else if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
           ret = 'void return';
-        }
-        else {
-          var offset = heap[16] === 145 ? 17 : 18; //判断传入参数是否有误
+        } else {
+          var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
           var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
           var _ret   = buf.read();
           if (_ret instanceof Error || offset === 18) {
@@ -193,7 +190,7 @@ Service.prototype.bufferHead = function (length) {
   if (length > DEFAULT_LEN) {
     throw new Error(`Data length too large: ${length}, max payload: ${DEFAULT_LEN}`);
   }
-  //构造body长度信息
+  // 构造body长度信息
   if (length - 256 < 0) {
     head.splice(i, 1, length - 256);
   } else {
@@ -201,14 +198,13 @@ Service.prototype.bufferHead = function (length) {
       head.splice(i--, 1, length % 256);
       length = length / 256 | 0;
     }
-    head.splice(i--, 1, length);
+    head.splice(i - 1, 1, length);
   }
   return new Buffer(head);
 };
 
 Service.prototype.bufferBody = function (method, type, args) {
   var encoder = new hessian.EncoderV2();
-
   encoder.write(this._version);
   encoder.write(this._path);
   encoder.write(this._env);
@@ -225,6 +221,4 @@ Service.prototype.bufferBody = function (method, type, args) {
   return encoder;
 };
 
-
 module.exports = Service;
-
