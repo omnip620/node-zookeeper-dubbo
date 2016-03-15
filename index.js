@@ -59,15 +59,21 @@ ZK.prototype.getZoo = function (path, cb) {
   function handleResult(err, children) {
     var zoo, urlParsed;
     if (err) {
+      if (err.code === -4) {
+        console.log(err);
+        process.exit(0);
+      }
+
       return cb(err);
     }
     if (children && !children.length) {
-      return cb('can\'t find zoo,pls check dubbo service!');
+      return cb(`can\'t find  the zoo:${path} ,pls check dubbo service!`);
     }
     for (var i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]));
       if (zoo.version === self.env) {
         break;
+
       }
     }
     // Get the first zoo
@@ -132,12 +138,8 @@ Service.prototype.excute = function (method, args, cb) {
       var chunks = [];
       var heap;
 
-      if (err) {
-        return reject(err);
-      }
-
       if (!~self.zoo.methods.indexOf(_method)) {
-        throw new SyntaxError("can't find the method, pls check it!");
+        return reject(`can't find the method:${_method}, pls check it!`);
       }
 
       client.connect(port, host, function () {
