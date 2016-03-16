@@ -200,7 +200,7 @@ Service.prototype.bufferHead = function (length) {
       head.splice(i--, 1, length % 256);
       length = length / 256 | 0;
     }
-    head.splice(i - 1, 1, length);
+    head.splice(i--, 1, length);
   }
   return new Buffer(head);
 };
