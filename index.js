@@ -33,7 +33,11 @@ var ZK = function (conn, env) {
 
 ZK.prototype.connect = function (conn) {
   !this.conn && (this.conn = conn);
-  this.client = zookeeper.createClient(this.conn);
+  this.client = zookeeper.createClient(this.conn, {
+    sessionTimeout: 30000,
+    spinDelay     : 1000,
+    retries       : 5
+  });
   this.client.connect();
   this.client.once('connected', function connect() {
     console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
@@ -52,28 +56,24 @@ ZK.prototype.close = function () {
  */
 
 ZK.prototype.getZoo = function (path, cb) {
-  this.path = '/dubbo/' + path + '/providers';
-  var self  = this;
-
-  self.client.getChildren(self.path, handleResult);
+  var self = this;
+  self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
   function handleResult(err, children) {
     var zoo, urlParsed;
     if (err) {
       if (err.code === -4) {
         console.log(err);
-        process.exit(0);
       }
-
       return cb(err);
     }
     if (children && !children.length) {
       return cb(`can\'t find  the zoo:${path} ,pls check dubbo service!`);
     }
+
     for (var i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]));
       if (zoo.version === self.env) {
         break;
-
       }
     }
     // Get the first zoo
