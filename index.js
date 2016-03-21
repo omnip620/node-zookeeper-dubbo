@@ -26,6 +26,7 @@ var ZK = function (conn, env) {
   this.conn    = conn;
   this.env     = env;
   this.methods = [];
+  this.cached  = {};
   this.connect();
 
   ZK.instance = this;
@@ -79,8 +80,14 @@ ZK.prototype.getZoo = function (path, cb) {
     // Get the first zoo
     urlParsed    = url.parse(Object.keys(zoo)[0]);
     self.methods = zoo.methods.split(',');
-    cb(null, {host: urlParsed.hostname, port: urlParsed.port});
+    zoo          = {host: urlParsed.hostname, port: urlParsed.port};
+    self.cacheZoo(path, zoo);
+    cb(null, zoo);
   }
+};
+
+ZK.prototype.cacheZoo = function (path, zoo) {
+  this.cached[path] = zoo;
 };
 
 var Service = function (opt) {
@@ -97,7 +104,7 @@ var Service = function (opt) {
       timeout  : '60000'
     }
   };
-  this.zoo         = new ZK(opt.conn, this._env);
+  this.zk          = new ZK(opt.conn, this._env);
 };
 
 Service.prototype.excute = function (method, args, cb) {
@@ -125,8 +132,15 @@ Service.prototype.excute = function (method, args, cb) {
   var self = this;
 
   return new Promise(function (resolve, reject) {
-    self.zoo.getZoo(self._path, zooData);
-    function zooData(err, zoo) {
+    var fromCache = true;
+    if (self.zk.cached.hasOwnProperty(self._path)) {
+      fetchData(null, self.zk.cached[self._path]);
+    } else {
+      fromCache = false;
+      self.zk.getZoo(self._path, fetchData);
+    }
+
+    function fetchData(err, zoo) {
       if (err) {
         return reject(err);
       }
@@ -138,7 +152,7 @@ Service.prototype.excute = function (method, args, cb) {
       var chunks = [];
       var heap;
 
-      if (!~self.zoo.methods.indexOf(_method)) {
+      if (!~self.zk.methods.indexOf(_method) && !fromCache) {
         return reject(`can't find the method:${_method}, pls check it!`);
       }
 
@@ -146,9 +160,15 @@ Service.prototype.excute = function (method, args, cb) {
         client.write(buffer);
       });
 
+      client.on('error', function (err) {
+        console.log(err);
+        fromCache = false;
+        return self.zk.getZoo(self._path, fetchData);// reconnect when err occur
+      });
+
       client.on('data', function (chunk) {
         if (!chunks.length) {
-          var arr = [].slice.call(chunk.slice(0, 16));
+          var arr = Array.prototype.slice.call(chunk.slice(0, 16));
           var l;
           var i   = 0;
           while ((l = arr.pop())) {
@@ -159,7 +179,11 @@ Service.prototype.excute = function (method, args, cb) {
         heap = Buffer.concat(chunks);
         (heap.length >= bl) && client.destroy();
       });
-      client.on('close', function () {
+      client.on('close', function (err) {
+        if (err) {
+          return console.log('some err happened, so reconnect, check the err event');
+        }
+
         if (heap[3] === 70) {
           ret = heap.slice(19, heap.length - 1).toString();
         } else if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
@@ -198,7 +222,7 @@ Service.prototype.bufferHead = function (length) {
   } else {
     while (length - 256 > 0) {
       head.splice(i--, 1, length % 256);
-      length = length / 256 | 0;
+      length = length >> 8;
     }
     head.splice(i, 1, length);
   }
