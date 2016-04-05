@@ -184,9 +184,11 @@ Service.prototype.excute = function (method, args, cb) {
           return console.log('some err happened, so reconnect, check the err event');
         }
 
-        if (heap[3] === 70) {
-          ret = heap.slice(19, heap.length - 1).toString();
-        } else if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
+        if (heap[3] !== 20) {
+          ret = heap.slice(18, heap.length - 1).toString(); // error捕获
+          return reject(ret);
+        }
+        if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
           ret = 'void return';
         } else {
           var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
@@ -217,8 +219,8 @@ Service.prototype.bufferHead = function (length) {
     throw new Error(`Data length too large: ${length}, max payload: ${DEFAULT_LEN}`);
   }
   // 构造body长度信息
-  if (length - 256 < 0) {
-    head.splice(i, 1, length - 256);
+  if (256 - length < 0) {
+    head.splice(i, 1, 256 - length);
   } else {
     while (length - 256 > 0) {
       head.splice(i--, 1, length % 256);
