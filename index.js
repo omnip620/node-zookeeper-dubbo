@@ -219,8 +219,8 @@ Service.prototype.bufferHead = function (length) {
     throw new Error(`Data length too large: ${length}, max payload: ${DEFAULT_LEN}`);
   }
   // 构造body长度信息
-  if (256 - length < 0) {
-    head.splice(i, 1, 256 - length);
+  if (length - 256 < 0) {
+    head.splice(i, 1, length - 256);
   } else {
     while (length - 256 > 0) {
       head.splice(i--, 1, length % 256);
