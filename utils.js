@@ -3,11 +3,9 @@
 var nextTick;
 if (typeof setImmediate === 'function') {
   nextTick = setImmediate;
-}
-else if (typeof process === 'object' && process && process.nextTick) {
+} else if (typeof process === 'object' && process && process.nextTick) {
   nextTick = process.nextTick;
-}
-else {
+} else {
   nextTick = function (cb) {
     setTimeout(cb, 0);
   };
@@ -37,5 +35,3 @@ Object.assign(Promise.prototype, {
 });
 
 exports.nodeify = nodeify;
-
-

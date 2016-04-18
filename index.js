@@ -191,13 +191,17 @@ Service.prototype.excute = function (method, args, cb) {
         if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
           ret = 'void return';
         } else {
-          var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
-          var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
-          var _ret   = buf.read();
-          if (_ret instanceof Error || offset === 18) {
-            return reject(_ret);
+          try {
+            var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
+            var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
+            var _ret   = buf.read();
+            if (_ret instanceof Error || offset === 18) {
+              return reject(_ret);
+            }
+            ret = JSON.stringify(_ret);
+          } catch (err) {
+            return reject(err);
           }
-          ret = JSON.stringify(_ret);
         }
         resolve(ret);
       });
