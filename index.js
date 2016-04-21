@@ -6,7 +6,7 @@ const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
 require('./utils');
 
-// 默认body最大长度
+// default body max length
 const DEFAULT_LEN = 8 * 1024 * 1024;
 
 /**
@@ -174,10 +174,9 @@ Service.prototype.excute = function (method, args, cb) {
       client.on('data', function (chunk) {
         if (!chunks.length) {
           var arr = Array.prototype.slice.call(chunk.slice(0, 16));
-          var l;
           var i   = 0;
-          while ((l = arr.pop())) {
-            bl += l * Math.pow(255, i++);
+          while (i < 3) {
+            bl += arr.pop() * Math.pow(255, i++);
           }
         }
         chunks.push(chunk);
