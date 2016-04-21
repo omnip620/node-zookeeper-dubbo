@@ -162,6 +162,11 @@ Service.prototype.excute = function (method, args, cb) {
 
       client.on('error', function (err) {
         console.log(err);
+
+        // 2s duration reconnect
+        var nextTime = new Date().getTime() + (2 * 1000);
+        while (new Date().getTime() < nextTime) { ; }
+
         fromCache = false;
         return self.zk.getZoo(self._path, fetchData);// reconnect when err occur
       });
