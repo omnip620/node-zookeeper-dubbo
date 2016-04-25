@@ -133,6 +133,8 @@ Service.prototype.excute = function (method, args, cb) {
 
   return new Promise(function (resolve, reject) {
     var fromCache = true;
+
+    var tryConnectZoo = true;
     if (self.zk.cached.hasOwnProperty(self._path)) {
       fetchData(null, self.zk.cached[self._path]);
     } else {
@@ -164,11 +166,16 @@ Service.prototype.excute = function (method, args, cb) {
         console.log(err);
 
         // 2s duration reconnect
-        var nextTime = new Date().getTime() + (2 * 1000);
-        while (new Date().getTime() < nextTime) { ; }
+        if (tryConnectZoo) {
+          tryConnectZoo = false;
+          setTimeout(handleReconnect, 2000);
+        }
 
-        fromCache = false;
-        return self.zk.getZoo(self._path, fetchData);// reconnect when err occur
+        function handleReconnect() {
+          tryConnectZoo = true;
+          fromCache     = false;
+          return self.zk.getZoo(self._path, fetchData);// reconnect when err occur
+        }
       });
 
       client.on('data', function (chunk) {
@@ -187,27 +194,27 @@ Service.prototype.excute = function (method, args, cb) {
         if (err) {
           return console.log('some err happened, so reconnect, check the err event');
         }
-
         if (heap[3] !== 20) {
           ret = heap.slice(18, heap.length - 1).toString(); // error捕获
           return reject(ret);
         }
         if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
           ret = 'void return';
-        } else {
-          try {
-            var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
-            var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
-            var _ret   = buf.read();
-            if (_ret instanceof Error || offset === 18) {
-              return reject(_ret);
-            }
-            ret = JSON.stringify(_ret);
-          } catch (err) {
-            return reject(err);
-          }
+          return resolve(ret);
         }
-        resolve(ret);
+
+        try {
+          var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
+          var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
+          var _ret   = buf.read();
+          if (_ret instanceof Error || offset === 18) {
+            return reject(_ret);
+          }
+          ret = JSON.stringify(_ret);
+        } catch (err) {
+          return reject(err);
+        }
+        return resolve(ret);
       });
     }
   }).nodeify(cb);
