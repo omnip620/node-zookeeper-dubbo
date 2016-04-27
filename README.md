@@ -7,7 +7,7 @@ nodejs connect dubbo by default protocol in zookeeper
 
 ### config
 ##### env
-envirmoment
+zookeeper envirmoment
 ##### conn
 zookeeper conn url
 ##### path
@@ -22,7 +22,8 @@ var Service=require('node-zookeeper-dubbo');
 var opt={
   env:'test',
   conn:'127.0.0.1:2180',
-  path:'com.customer.Service'
+  path:'com.customer.Service',
+  version:'2.3.4.5'
 }
 
 var method="getUserByID";
