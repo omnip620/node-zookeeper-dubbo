@@ -7,7 +7,7 @@ const qs        = require('querystring');
 require('./utils');
 
 // default body max length
-const DEFAULT_LEN = 8 * 1024 * 1024;
+const DEFAULT_LEN = 8388608; // 8 * 1024 * 1024
 
 /**
  * Create a zookeeper connection
