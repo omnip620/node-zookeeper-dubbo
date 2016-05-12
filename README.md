@@ -7,7 +7,7 @@ nodejs connect dubbo by default protocol in zookeeper
 
 ### config
 ##### env
-zookeeper envirmoment
+dubbo service version
 ##### conn
 zookeeper conn url
 ##### path
@@ -20,8 +20,8 @@ dubbo version
 var Service=require('node-zookeeper-dubbo');
 
 var opt={
-  env:'test', // zookeeper env
-  gruop:'dubbo', // dubbo group default 'dubbo'
+  env:'test', // dubbo service version
+  gruop:'dubbo', // dubbo group default by 'dubbo',optional
   conn:'127.0.0.1:2180', // zookeeper url
   path:'com.customer.Service', // service url
   version:'2.3.4.5' // dubbo version
