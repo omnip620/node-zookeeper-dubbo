@@ -20,10 +20,11 @@ dubbo version
 var Service=require('node-zookeeper-dubbo');
 
 var opt={
-  env:'test',
-  conn:'127.0.0.1:2180',
-  path:'com.customer.Service',
-  version:'2.3.4.5'
+  env:'test', // zookeeper env
+  gruop:'dubbo', // dubbo group default 'dubbo'
+  conn:'127.0.0.1:2180', // zookeeper url
+  path:'com.customer.Service', // service url
+  version:'2.3.4.5' // dubbo version
 }
 
 var method="getUserByID";

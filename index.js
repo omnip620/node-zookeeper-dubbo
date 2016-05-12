@@ -52,13 +52,14 @@ ZK.prototype.close = function () {
 /**
  * Get a zoo
  *
+ * @param {String} group
  * @param {String} path
  * @param {Function} cb
  */
 
-ZK.prototype.getZoo = function (path, cb) {
+ZK.prototype.getZoo = function (group, path, cb) {
   var self = this;
-  self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
+  self.client.getChildren('/' + group + '/' + path + '/providers', handleResult);
   function handleResult(err, children) {
     var zoo, urlParsed;
     if (err) {
@@ -68,7 +69,7 @@ ZK.prototype.getZoo = function (path, cb) {
       return cb(err);
     }
     if (children && !children.length) {
-      return cb(`can\'t find  the zoo:${path} ,pls check dubbo service!`);
+      return cb(`can\'t find  the zoo:${group}/${path} ,pls check dubbo service!`);
     }
 
     for (var i = 0, l = children.length; i < l; i++) {
@@ -94,6 +95,7 @@ var Service = function (opt) {
   this._version = opt.version || '2.5.3.4';
   this._path    = opt.path;
   this._env     = opt.env.toUpperCase();
+  this._group   = opt.group || 'dubbo';
 
   this._attchments = {
     $class: 'java.util.HashMap',
@@ -139,7 +141,7 @@ Service.prototype.excute = function (method, args, cb) {
       fetchData(null, self.zk.cached[self._path]);
     } else {
       fromCache = false;
-      self.zk.getZoo(self._path, fetchData);
+      self.zk.getZoo(self._group, self._path, fetchData);
     }
 
     function fetchData(err, zoo) {
@@ -174,7 +176,7 @@ Service.prototype.excute = function (method, args, cb) {
         function handleReconnect() {
           tryConnectZoo = true;
           fromCache     = false;
-          return self.zk.getZoo(self._path, fetchData);// reconnect when err occur
+          return self.zk.getZoo(self._group, self._path, fetchData);// reconnect when err occur
         }
       });
 
