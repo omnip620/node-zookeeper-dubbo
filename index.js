@@ -59,7 +59,7 @@ ZK.prototype.close = function () {
 
 ZK.prototype.getZoo = function (group, path, cb) {
   var self = this;
-  self.client.getChildren('/' + group + '/' + path + '/providers', handleResult);
+  self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
   function handleResult(err, children) {
     var zoo, urlParsed;
     if (err) {
@@ -69,7 +69,7 @@ ZK.prototype.getZoo = function (group, path, cb) {
       return cb(err);
     }
     if (children && !children.length) {
-      return cb(`can\'t find  the zoo:${group}/${path} ,pls check dubbo service!`);
+      return cb(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
     }
 
     for (var i = 0, l = children.length; i < l; i++) {
@@ -92,17 +92,18 @@ ZK.prototype.cacheZoo = function (path, zoo) {
 };
 
 var Service = function (opt) {
-  this._version = opt.version || '2.5.3.4';
   this._path    = opt.path;
+  this._version = opt.version || '2.5.3.4';
   this._env     = opt.env.toUpperCase();
-  this._group   = opt.group || 'dubbo';
+  this._group   = opt.group || '';
 
   this._attchments = {
     $class: 'java.util.HashMap',
     $     : {
-      path     : this._path,
       interface: this._path,
       version  : this._env,
+      group    : this._group,
+      path     : this._path,
       timeout  : '60000'
     }
   };
@@ -207,7 +208,7 @@ Service.prototype.excute = function (method, args, cb) {
 
         try {
           var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
-          var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length - 1));
+          var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length));
           var _ret   = buf.read();
           if (_ret instanceof Error || offset === 18) {
             return reject(_ret);
