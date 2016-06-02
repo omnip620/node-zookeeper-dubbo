@@ -19,12 +19,14 @@ const DEFAULT_LEN = 8388608; // 8 * 1024 * 1024
  *
  * @constructor
  */
-var ZK = function (conn, env) {
+var ZK = function (conn, env, opt) {
   if (typeof ZK.instance === 'object') {
     return ZK.instance;
   }
   this.conn    = conn;
   this.env     = env;
+  this.group   = opt.group;
+  this.version = opt.version;
   this.methods = [];
   this.cached  = {};
   this.connect();
@@ -57,7 +59,7 @@ ZK.prototype.close = function () {
  * @param {Function} cb
  */
 
-ZK.prototype.getZoo = function (group, path, cb) {
+ZK.prototype.getZoo = function (path, cb) {
   var self = this;
   self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
   function handleResult(err, children) {
@@ -74,7 +76,7 @@ ZK.prototype.getZoo = function (group, path, cb) {
 
     for (var i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]));
-      if (zoo.version === self.env) {
+      if ((zoo.version === self.version||zoo['default.version'] === self.version)&&(zoo['default.group']===self.group||zoo['group']===self.group)) {
         break;
       }
     }
@@ -101,13 +103,14 @@ var Service = function (opt) {
     $class: 'java.util.HashMap',
     $     : {
       interface: this._path,
-      version  : this._env,
+      version  : this._version,
+      environment  : this._env,
       group    : this._group,
       path     : this._path,
       timeout  : '60000'
     }
   };
-  this.zk          = new ZK(opt.conn, this._env);
+  this.zk          = new ZK(opt.conn, this._env,opt);
 };
 
 Service.prototype.excute = function (method, args, cb) {
@@ -142,7 +145,7 @@ Service.prototype.excute = function (method, args, cb) {
       fetchData(null, self.zk.cached[self._path]);
     } else {
       fromCache = false;
-      self.zk.getZoo(self._group, self._path, fetchData);
+      self.zk.getZoo(self._path, fetchData);
     }
 
     function fetchData(err, zoo) {
@@ -177,7 +180,7 @@ Service.prototype.excute = function (method, args, cb) {
         function handleReconnect() {
           tryConnectZoo = true;
           fromCache     = false;
-          return self.zk.getZoo(self._group, self._path, fetchData);// reconnect when err occur
+          return self.zk.getZoo(self._path, fetchData);// reconnect when err occur
         }
       });
 
