@@ -12,6 +12,7 @@ const DEFAULT_LEN = 8388608; // 8 * 1024 * 1024
 /**
  * Create a zookeeper connection
  *
+ * @param {Object} opt
  * @param {String} conn
  * @param {String} env
  * @returns {Object} zoo
@@ -54,7 +55,6 @@ ZK.prototype.close = function () {
 /**
  * Get a zoo
  *
- * @param {String} group
  * @param {String} path
  * @param {Function} cb
  */
@@ -76,7 +76,8 @@ ZK.prototype.getZoo = function (path, cb) {
 
     for (var i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]));
-      if ((zoo.version === self.version||zoo['default.version'] === self.version)&&(zoo['default.group']===self.group||zoo['group']===self.group)) {
+      console.log(zoo, '------');
+      if ((zoo.version === self.version || zoo['default.version'] === self.version) && (zoo['default.group'] === self.group || zoo['group'] === self.group)) {
         break;
       }
     }
@@ -95,22 +96,21 @@ ZK.prototype.cacheZoo = function (path, zoo) {
 
 var Service = function (opt) {
   this._path    = opt.path;
-  this._version = opt.version || '2.5.3.4';
+  this._version = opt.version || '2.5.3.6';
   this._env     = opt.env.toUpperCase();
   this._group   = opt.group || '';
 
   this._attchments = {
     $class: 'java.util.HashMap',
     $     : {
-      interface: this._path,
-      version  : this._version,
-      environment  : this._env,
-      group    : this._group,
-      path     : this._path,
-      timeout  : '60000'
+      interface  : this._path,
+      version    : this._env,
+      group      : this._group,
+      path       : this._path,
+      timeout    : '60000'
     }
   };
-  this.zk          = new ZK(opt.conn, this._env,opt);
+  this.zk          = new ZK(opt.conn, this._env, opt);
 };
 
 Service.prototype.excute = function (method, args, cb) {
