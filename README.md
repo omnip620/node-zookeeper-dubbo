@@ -73,8 +73,6 @@ Default the zookeeper connection is keep-alive,you can call ```service.zoo.close
 
 [zhchj126](https://github.com/zhchj126) @ 平安健康
 
-[maochendong](https://github.com/maochendong)
-
 ### Join us
 sending your CV to panzhichao@jk.cn
 
