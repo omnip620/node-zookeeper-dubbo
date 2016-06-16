@@ -65,16 +65,16 @@ Default the zookeeper connection is keep-alive,you can call ```service.zoo.close
 
 
 ### Contributors
-[PanEW](https://github.com/p412726700) @ 平安健康
+[PanEW](https://github.com/p412726700)
 
-[zhanghua](https://github.com/zhanghua499) @ 平安健康
+[zhanghua](https://github.com/zhanghua499)
 
-[caomu](https://github.com/caomu) @ 平安健康
+[caomu](https://github.com/caomu)
 
-[zhchj126](https://github.com/zhchj126) @ 平安健康
+[zhchj126](https://github.com/zhchj126)
 
-### Join us
-sending your CV to panzhichao@jk.cn
+### Recruitment (ง •̀_•́)ง
+want to join us? if u have any interests,contact me or send your CV to panzhichao@jk.cn
 
 [npm-image]:http://img.shields.io/npm/v/node-zookeeper-dubbo.svg?style=flat-square
 [npm-url]:https://npmjs.org/package/node-zookeeper-dubbo?style=flat-square
