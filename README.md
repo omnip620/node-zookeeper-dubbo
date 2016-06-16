@@ -3,7 +3,6 @@ nodejs connect dubbo by default protocol in zookeeper
 
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][npm-url]
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/p412726700/node-zookeeper-dubbo/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 ### config
 ##### env
