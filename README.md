@@ -62,6 +62,8 @@ var arg1=java('int',123);
 
 Default the zookeeper connection is keep-alive,you can call ```service.zoo.close()``` to close the connect;
 
+### Recruitment (ง •̀_•́)ง
+want to join us? if u have any interests,contact me or send your CV to panzhichao@jk.cn
 
 ### Contributors
 [PanEW](https://github.com/p412726700)
@@ -72,8 +74,7 @@ Default the zookeeper connection is keep-alive,you can call ```service.zoo.close
 
 [zhchj126](https://github.com/zhchj126)
 
-### Recruitment (ง •̀_•́)ง
-want to join us? if u have any interests,contact me or send your CV to panzhichao@jk.cn
+
 
 [npm-image]:http://img.shields.io/npm/v/node-zookeeper-dubbo.svg?style=flat-square
 [npm-url]:https://npmjs.org/package/node-zookeeper-dubbo?style=flat-square
