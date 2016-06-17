@@ -202,8 +202,7 @@ Service.prototype.excute = function (method, args, cb) {
           return reject(ret);
         }
         if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
-          ret = 'void return';
-          return resolve(ret);
+          return resolve(null);
         }
 
         try {
