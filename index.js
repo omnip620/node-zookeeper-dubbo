@@ -27,22 +27,27 @@ var ZK = function (conn, env) {
   this.env     = env;
   this.methods = [];
   this.cached  = {};
-  this.connect();
+  //this.connect();		//为了初始化方法列表，这个方法暂缓调用。
 
   ZK.instance = this;
 };
 
 ZK.prototype.connect = function (conn) {
-  !this.conn && (this.conn = conn);
-  this.client = zookeeper.createClient(this.conn, {
-    sessionTimeout: 30000,
-    spinDelay     : 1000,
-    retries       : 5
-  });
-  this.client.connect();
-  this.client.once('connected', function connect() {
-    console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
-  });
+	var self = this;
+	//connect后再getZoo
+  return new Promise(function (resolve, reject) {
+	  !self.conn && (self.conn = conn);
+	  self.client = zookeeper.createClient(self.conn, {
+	    sessionTimeout: 30000,
+	    spinDelay     : 1000,
+	    retries       : 5
+	  });
+	  self.client.connect();
+	  self.client.once('connected', function connect() {
+	    console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
+	    resolve(self.client);
+	  });
+	});
 };
 
 ZK.prototype.close = function () {
@@ -59,32 +64,52 @@ ZK.prototype.close = function () {
 
 ZK.prototype.getZoo = function (group, path, cb) {
   var self = this;
-  self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
-  function handleResult(err, children) {
-    var zoo, urlParsed;
-    if (err) {
-      if (err.code === -4) {
-        console.log(err);
-      }
-      return cb(err);
-    }
-    if (children && !children.length) {
-      return cb(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
-    }
-
-    for (var i = 0, l = children.length; i < l; i++) {
-      zoo = qs.parse(decodeURIComponent(children[i]));
-      if (zoo.version === self.env) {
-        break;
-      }
-    }
-    // Get the first zoo
-    urlParsed    = url.parse(Object.keys(zoo)[0]);
-    self.methods = zoo.methods.split(',');
-    zoo          = {host: urlParsed.hostname, port: urlParsed.port};
-    self.cacheZoo(path, zoo);
-    cb(null, zoo);
-  }
+  
+  return new Promise(function (resolve, reject) {
+	  self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
+	  function handleResult(err, children) {
+	    var zoo, urlParsed;
+	    if (err) {
+	      if (err.code === -4) {
+	        console.log(err);
+	      }
+	      return reject(err);
+	    }
+	    if (children && !children.length) {
+	      return reject(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
+	    }
+	
+	    for (var i = 0, l = children.length; i < l; i++) {
+	      zoo = qs.parse(decodeURIComponent(children[i]));
+	      if (zoo.version === self.env) {
+	        break;
+	      }
+	    }
+	    // Get the first zoo
+	    urlParsed    = url.parse(Object.keys(zoo)[0]);
+	    self.methods = zoo.methods.split(',');
+	    //注入方法
+	    for (var i=0; i<self.methods.length; i++) {
+	    	//console.log(self.methods[i]);
+	    	var rmd = self.methods[i];
+	    	Service.prototype[rmd] = function() {
+	    		//console.log(arguments.length);
+	    		var newargs = [];
+	    		for (var j=0; j<arguments.length; j++) {
+	    			var arg = arguments[j];
+	    			//console.log(typeof(arg));
+	    			newargs.push(arg);
+	    		}
+	    		//调用远程方法
+	    		return this.excute(rmd, newargs);
+	    	}
+	    }
+	    zoo          = {host: urlParsed.hostname, port: urlParsed.port};
+	    self.cacheZoo(path, zoo);
+	    //cb(null, zoo);
+	    return resolve(zoo);
+	  }
+	}).nodeify(cb);
 };
 
 ZK.prototype.cacheZoo = function (path, zoo) {
@@ -108,6 +133,15 @@ var Service = function (opt) {
     }
   };
   this.zk          = new ZK(opt.conn, this._env);
+  //增加初始化方法，进行注入。
+  this.init = function() {
+  	var self = this;
+  	return new Promise(function (resolve, reject) {
+  		self.zk.connect().then(function(){
+  			self.zk.getZoo(self._group, self._path).then(resolve, reject);
+  		}, reject);
+  	});
+  }
 };
 
 Service.prototype.excute = function (method, args, cb) {
