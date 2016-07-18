@@ -50,7 +50,6 @@ ZK.prototype.connect = function (conn) {
     if (self.services) {
       self.regConsumer();
     }
-//    self.regProvider();
     console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
   });
 };
