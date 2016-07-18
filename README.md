@@ -13,9 +13,11 @@ zookeeper conn url
 the service you need
 ##### version
 dubbo version
+##### services
+
 
 ### Usage
-first you need to init the service so that Invoke the consumers in zk 
+**first** you need to init the service so that invoke the consumers in zk
 
 app.js
 ```javascript
@@ -26,8 +28,19 @@ new Service({
   services: require('./dubbo/services')
 })
 ```
-in you business files,
+/dubbo/services.js
 
+```javascript
+'use strict';
+
+module.exports = [
+  {Foo: 'com.customer.FooService'},
+  {Bar: 'com.customer.BarService'}
+];
+
+```
+
+in you business code, service.js
 
 ```javascript
 var Service=require('node-zookeeper-dubbo');
@@ -76,8 +89,9 @@ var arg1=java('int',123);
 
 Default the zookeeper connection is keep-alive,you can call ```service.zoo.close()``` to close the connect;
 
-### Recruitment (ง •̀_•́)ง
-want to join us? if u have any interests,contact me or send your CV to panzhichao@jk.cn
+### Optimize
+
+There are a lot of non-functional requirements need to be satisfied, but time is hard, so pls patience, we'll scare you.
 
 ### Contributors
 [PanEW](https://github.com/p412726700)
