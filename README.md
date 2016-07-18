@@ -14,7 +14,21 @@ the service you need
 ##### version
 dubbo version
 
-### Example
+### Usage
+first you need to init the service so that Invoke the consumers in zk 
+
+app.js
+```javascript
+var service=require('node-zookeeper-dubbo');
+new Service({
+  env:'test',
+  conn:'127.0.0.1:2180',
+  services: require('./dubbo/services')
+})
+```
+in you business files,
+
+
 ```javascript
 var Service=require('node-zookeeper-dubbo');
 

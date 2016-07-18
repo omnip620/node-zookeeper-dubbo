@@ -85,7 +85,7 @@ ZK.prototype.getZoo = function (group, path, cb) {
     for (var i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]));
       if (zoo.version === self.env) {
-        break;
+//        break;
       }
     }
     // Get the first zoo
@@ -107,8 +107,7 @@ var Service = function (opt) {
   this._env      = opt.env.toUpperCase();
   this._group    = opt.group || '';
   this._services = opt.services;
-
-
+  
   this._attchments = {
     $class: 'java.util.HashMap',
     $     : {
@@ -197,7 +196,6 @@ Service.prototype.excute = function (method, args, cb) {
             bl += arr.pop() * Math.pow(255, i++);
           }
         }
-        console.log(11111)
         chunks.push(chunk);
         heap = Buffer.concat(chunks);
 
@@ -240,7 +238,7 @@ Service.prototype.buffer = function (method, type, args) {
 };
 
 Service.prototype.bufferHead = function (length) {
-  var head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
+  var head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   var i    = 15;
 
   if (length > DEFAULT_LEN) {

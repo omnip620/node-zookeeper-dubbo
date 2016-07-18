@@ -188,5 +188,6 @@ Temporary Items
 ### SVN template
 .svn/
 test/
+indexx.js
 
 # Created by .ignore support plugin (hsz.mobi)
