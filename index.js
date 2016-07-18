@@ -4,6 +4,7 @@ const hessian   = require('hessian.js');
 const url       = require('url');
 const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
+const reg       = require('./libs/register');
 require('./utils');
 
 // default body max length
@@ -14,25 +15,30 @@ const DEFAULT_LEN = 8388608; // 8 * 1024 * 1024
  *
  * @param {String} conn
  * @param {String} env
+ * @param {String} dubboVer
+ * @param {Object} services
  * @returns {Object} zoo
  *
  *
  * @constructor
  */
-var ZK = function (conn, env) {
+var ZK = function (conn, env, services, dubboVer) {
   if (typeof ZK.instance === 'object') {
     return ZK.instance;
   }
-  this.conn    = conn;
-  this.env     = env;
-  this.methods = [];
-  this.cached  = {};
+  this.conn     = conn;
+  this.env      = env;
+  this.services = services || null;
+  this.methods  = [];
+  this.cached   = {};
+  this.dubboVer = dubboVer;
   this.connect();
 
   ZK.instance = this;
 };
 
 ZK.prototype.connect = function (conn) {
+  var self = this;
   !this.conn && (this.conn = conn);
   this.client = zookeeper.createClient(this.conn, {
     sessionTimeout: 30000,
@@ -41,11 +47,16 @@ ZK.prototype.connect = function (conn) {
   });
   this.client.connect();
   this.client.once('connected', function connect() {
+    if (self.services) {
+      self.regConsumer();
+    }
+//    self.regProvider();
     console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
   });
 };
 
-ZK.prototype.close = function () {
+ZK.prototype.regConsumer = reg.consumer;
+ZK.prototype.close       = function () {
   this.client.close();
 };
 
@@ -92,22 +103,22 @@ ZK.prototype.cacheZoo = function (path, zoo) {
 };
 
 var Service = function (opt) {
-  this._path    = opt.path;
-  this._version = opt.version || '2.5.3.4';
-  this._env     = opt.env.toUpperCase();
-  this._group   = opt.group || '';
+  this._path     = opt.path;
+  this._version  = opt.version || '2.5.3.6';
+  this._env      = opt.env.toUpperCase();
+  this._group    = opt.group || '';
+  this._services = opt.services;
+
 
   this._attchments = {
     $class: 'java.util.HashMap',
     $     : {
       interface: this._path,
       version  : this._env,
-      group    : this._group,
-      path     : this._path,
-      timeout  : '60000'
+      group    : this._group
     }
   };
-  this.zk          = new ZK(opt.conn, this._env);
+  this.zk          = new ZK(opt.conn, this._env, this._services, this._version);
 };
 
 Service.prototype.excute = function (method, args, cb) {
@@ -133,10 +144,8 @@ Service.prototype.excute = function (method, args, cb) {
     buffer = this.buffer(_method, '');
   }
   var self = this;
-
   return new Promise(function (resolve, reject) {
-    var fromCache = true;
-
+    var fromCache     = true;
     var tryConnectZoo = true;
     if (self.zk.cached.hasOwnProperty(self._path)) {
       fetchData(null, self.zk.cached[self._path]);
@@ -189,10 +198,13 @@ Service.prototype.excute = function (method, args, cb) {
             bl += arr.pop() * Math.pow(255, i++);
           }
         }
+        console.log(11111)
         chunks.push(chunk);
         heap = Buffer.concat(chunks);
+
         (heap.length >= bl) && client.destroy();
       });
+
       client.on('close', function (err) {
         if (err) {
           return console.log('some err happened, so reconnect, check the err event');
@@ -229,7 +241,7 @@ Service.prototype.buffer = function (method, type, args) {
 };
 
 Service.prototype.bufferHead = function (length) {
-  var head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0];
   var i    = 15;
 
   if (length > DEFAULT_LEN) {

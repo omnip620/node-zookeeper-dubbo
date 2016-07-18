@@ -34,4 +34,18 @@ Object.assign(Promise.prototype, {
   nodeify: nodeifySelf
 });
 
+const co = function (genfun) {
+  const gen  = genfun();
+  const next = (value) => {
+    const ret = gen.next(value);
+    if (ret.done) return;
+    ret.value((err, val) => {
+      if (err) { return console.error(err); }
+      next(val);
+    });
+  };
+  next();
+};
+
 exports.nodeify = nodeify;
+exports.co      = co;

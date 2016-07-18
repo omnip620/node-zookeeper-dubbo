@@ -1,6 +1,6 @@
 {
   "name": "node-zookeeper-dubbo",
-  "version": "1.6.21",
+  "version": "1.7.0",
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "hessian.js": "^2.1.8",
-    "node-zookeeper-client": "^0.2.2"
+    "node-zookeeper-client": "0.2.2"
   },
   "jscsConfig": {
     "preset": "node-style-guide",
