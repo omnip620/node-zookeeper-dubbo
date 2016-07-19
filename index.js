@@ -85,7 +85,7 @@ ZK.prototype.getZoo = function (group, path, cb) {
     for (var i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]));
       if (zoo.version === self.env) {
-//        break;
+        break;
       }
     }
     // Get the first zoo
@@ -107,7 +107,7 @@ var Service = function (opt) {
   this._env      = opt.env.toUpperCase();
   this._group    = opt.group || '';
   this._services = opt.services;
-  
+
   this._attchments = {
     $class: 'java.util.HashMap',
     $     : {

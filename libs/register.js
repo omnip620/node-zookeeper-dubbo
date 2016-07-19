@@ -53,8 +53,9 @@ function ip() {
 function consumer() {
   let self     = this;
   let paths    = [];
-  var host     = ip();
+  let host     = ip();
   let services = self.services;
+  let serv;
 
   let info = {
     protocol: 'consumer',
@@ -75,9 +76,9 @@ function consumer() {
   };
 
   for (let s in services) {
-    let serv;
-    services.hasOwnProperty(s) && (serv = services[s]);
-
+    if (services.hasOwnProperty(s)) {
+      serv = services[s];
+    }
     info.host = `${host}/${serv}`;
 
     info.query.interface = serv;
