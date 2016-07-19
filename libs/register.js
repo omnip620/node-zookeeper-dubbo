@@ -74,9 +74,10 @@ function consumer() {
     }
   };
 
-  for (let i = 0, l = services.length; i < l; i++) {
-    let key   = Object.keys(services[i])[0];
-    let serv  = services[i][key];
+  for (let s in services) {
+    let serv;
+    services.hasOwnProperty(s) && (serv = services[s]);
+
     info.host = `${host}/${serv}`;
 
     info.query.interface = serv;

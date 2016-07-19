@@ -33,10 +33,10 @@ new Service({
 ```javascript
 'use strict';
 
-module.exports = [
-  {Foo: 'com.customer.FooService'},
-  {Bar: 'com.customer.BarService'}
-];
+module.exports = {
+  Foo: 'com.customer.FooService',
+  Bar: 'com.customer.BarService'
+};
 
 ```
 
