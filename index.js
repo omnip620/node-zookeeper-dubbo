@@ -104,7 +104,7 @@ ZK.prototype.cacheZoo = function (path, zoo) {
 var Service = function (opt) {
   this._path     = opt.path;
   this._version  = opt.version || '2.5.3.6';
-  this._env      = opt.env.toUpperCase();
+  this._env      = opt.env ? opt.env.toUpperCase() : '' ;  //prevent the nullPointerException
   this._group    = opt.group || '';
   this._services = opt.services;
 
