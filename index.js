@@ -92,6 +92,7 @@ ZK.prototype.getZoo = function (group, path, cb) {
     urlParsed    = url.parse(Object.keys(zoo)[0]);
     self.methods = zoo.methods.split(',');
     zoo          = {host: urlParsed.hostname, port: urlParsed.port};
+
     self.cacheZoo(path, zoo);
     cb(null, zoo);
   }
@@ -108,18 +109,16 @@ var Service = function (opt) {
   this._group    = opt.group || '';
   this._services = opt.services;
 
-  this._attchments = {
+  this._attachments = {
     $class: 'java.util.HashMap',
     $     : {
-      interface: this._path,
-      version  : this._env,
-      group    : this._group
     }
   };
   this.zk          = new ZK(opt.conn, this._env, this._services, this._version);
 };
 
 Service.prototype.excute = function (method, args, cb) {
+
   var _method         = method;
   var _parameterTypes = '';
   var _arguments      = args;
@@ -167,7 +166,6 @@ Service.prototype.excute = function (method, args, cb) {
       if (!~self.zk.methods.indexOf(_method) && !fromCache) {
         return reject(`can't find the method:${_method}, pls check it!`);
       }
-
       client.connect(port, host, function () {
         client.write(buffer);
       });
@@ -269,7 +267,7 @@ Service.prototype.bufferBody = function (method, type, args) {
       encoder.write(args[i]);
     }
   }
-  encoder.write(this._attchments);
+  encoder.write(this._attachments);
   encoder = encoder.byteBuffer._bytes.slice(0, encoder.byteBuffer._offset);
 
   return encoder;
