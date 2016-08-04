@@ -4,90 +4,61 @@ nodejs connect dubbo by default protocol in zookeeper
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][npm-url]
 
-### config
-##### env
-dubbo service version
-##### conn
-zookeeper conn url
-##### path
-the service you need
-##### version
-dubbo version
-##### services
-
 
 ### Usage
-**first** you need to init the service so that invoke the consumers in zk
-
-app.js
-```javascript
-var service=require('node-zookeeper-dubbo');
-new Service({
-  env:'test',
-  conn:'127.0.0.1:2180',
-  services: require('./dubbo/services')
-})
-```
-/dubbo/services.js
 
 ```javascript
-'use strict';
+const nzd=require('node-zookeeper-dubbo');
 
-module.exports = {
-  Foo: 'com.customer.FooService',
-  Bar: 'com.customer.BarService'
-};
-
-```
-
-in you business code, service.js
-
-```javascript
-var Service=require('node-zookeeper-dubbo');
-
-var opt={
-  env:'test', // dubbo service version
-  gruop:'dubbo', // dubbo group default by 'dubbo',optional
-  conn:'127.0.0.1:2180', // zookeeper url
-  path:'com.customer.Service', // service url
-  version:'2.3.4.5' // dubbo version
+const opt={
+  application:{name:'fxxk'},
+  register:'www.cctv.com:2181',
+  dubboVer:'2.5.3.6',
+  dependencies:{
+    Foo:{interface:'com.service.Foo',version:'LATEST',timeout:6000,group:'isis'},
+    Bar:{interface:'com.service.Bar',version:'LATEST',timeout:6000,group:'gcd'}
+  }  
 }
 
-var method="getUserByID";
-var arg1={$class:'int',$:123}
-var args=[arg1];
+const Dubbo=nzd(opt);
 
-var service = new Service(opt);
-service.excute(method,args,function(err,data){
-  if(err){
-    console.log(err);
-    return;
-  }
-  console.log(data)
-})
-
-or
-
-service
-  .excute(method,args)
-  .then(function(data){
-    console.log(data);
-  })
-  .catch(function(err) {
-    console.log(err);
-  })
+Dubbo.Foo
+  .xxMethod({'$class': 'java.lang.Long', '$': '10000000'})
+  .then(console.log)
+  .catch(console.error)
 
 ```
+
+### Config
+#### application
+###### name
+you application name
+#### register
+zookeeper conn url
+#### dubboVer
+the dubbo version
+#### dependencies
+the services you need to with
+##### interface
+interface (optional)
+##### version
+version (optional)
+##### timeout
+timeout (optional)
+##### group
+group (optional)
+
+Notice
+
+**First** must wait the service init done before use it ,symbol is **Dubbo service init done**
+
+
 you can use  [js-to-java](https://github.com/node-modules/js-to-java)
 ```javascript
 var arg1={$class:'int',$:123};
 //equivalent
 var arg1=java('int',123);
 ```
-
-### Close zookeeper connection
-
-Default the zookeeper connection is keep-alive,you can call ```service.zoo.close()``` to close the connect;
 
 ### Optimize
 

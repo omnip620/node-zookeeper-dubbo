@@ -5,7 +5,6 @@
 
 const url = require('url');
 const os  = require('os');
-const net = require('net');
 
 const CREATE_MODES = {
   /**
@@ -31,7 +30,6 @@ const CREATE_MODES = {
   EPHEMERAL_SEQUENTIAL: 3
 };
 
-
 function isLoopback(addr) {
   return /^(::f{4}:)?127\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/
       .test(addr) ||
@@ -51,10 +49,11 @@ function ip() {
 }
 
 function consumer() {
-  let self     = this;
-  let paths    = [];
-  let host     = ip();
-  let services = self.services;
+  let self  = this;
+  let paths = [];
+  let host  = ip();
+
+  let dependencies = self.dependencies;
   let serv;
 
   let info = {
@@ -62,27 +61,28 @@ function consumer() {
     slashes : 'true',
     host    : '',
     query   : {
-      application: 'falcon',
+      application: self.application.name,
       category   : 'consumers',
       check      : 'false',
       dubbo      : self.dubboVer,
       interface  : '',
-      methods    : '',
-      revision   : self.env,
-      version    : self.env,
+      revision   : '',
+      version    : '',
       side       : 'consumer',
       timestamp  : (new Date()).getTime()
     }
   };
 
-  for (let s in services) {
-    if (services.hasOwnProperty(s)) {
-      serv = services[s];
+  for (let s in dependencies) {
+    if (dependencies.hasOwnProperty(s)) {
+      serv = dependencies[s];
     }
-    info.host = `${host}/${serv}`;
+    info.host = `${host}/${serv.interface}`;
 
-    info.query.interface = serv;
-    paths.push(`/dubbo/${serv}/consumers/${encodeURIComponent(url.format(info))}`);
+    info.query.interface = serv.interface;
+    info.query.revision  = serv.version;
+    info.query.version   = serv.version;
+    paths.push(`/dubbo/${serv.interface}/consumers/${encodeURIComponent(url.format(info))}`);
   }
 
   for (let i = 0, l = paths.length; i < l; i++) {
@@ -107,71 +107,4 @@ function consumer() {
   }
 }
 
-function provider() {
-  const serviceName = 'com.pajk.falcon.service.TestService';
-  const self        = this;
-  const info        = {
-    protocol: 'dubbo',
-    slashes : 'true',
-    host    : `${ip()}:20880/${serviceName}`,
-    query   : {
-      application: 'falcon',
-      anyhost    : true,
-      dubbo      : '2.5.3.6',
-      interface  : serviceName,
-      methods    : 'test',
-      revision   : 'PZC',
-      side       : 'provider',
-      version    : 'PZC',
-      timestamp  : (new Date()).getTime()
-    }
-  };
-
-  const path = `/dubbo/${serviceName}/providers/${encodeURIComponent(url.format(info))}`;
-
-  self.client.exists(path, function (err, stat) {
-    if (err) {
-      console.log(err.stack);
-      return;
-    }
-
-    if (stat) {
-      console.log('Node exists.');
-      return;
-    }
-
-    self.client.mkdirp(`/dubbo/${serviceName}/providers`, function (err, dir) {
-      if (err) {
-        console.log(err.stack);
-        return;
-      }
-      self.client.create(path, CREATE_MODES.EPHEMERAL, function (err, node) {
-        if (err) {
-          console.log(err.stack);
-          return;
-        }
-
-        console.log(`${node} is created`);
-        handleProvider.call(self);
-      });
-    });
-  });
-}
-
-function handleProvider() {
-  const server = net.createServer(function (socket) {
-    socket.on('data', function (data) {
-      console.log(data);
-    });
-
-    socket.on('error', function (data) {
-      console.log('error', data);
-    })
-  });
-  server.listen(20880, function () {
-    console.log('listen 20880');
-  });
-}
-
 exports.consumer = consumer;
-exports.provider = provider;
