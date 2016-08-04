@@ -22,8 +22,17 @@ const opt={
 
 const Dubbo=nzd(opt);
 
+const customerObj = {
+  $class: 'com.xxx.XXXDTO',
+  $: {
+    a: 1,
+    b: 'test',
+    c: {$class: 'java.lang.Long', $: 123}
+  }
+};
+
 Dubbo.Foo
-  .xxMethod({'$class': 'java.lang.Long', '$': '10000000'})
+  .xxMethod({'$class': 'java.lang.Long', '$': '10000000'},customerObj)
   .then(console.log)
   .catch(console.error)
 
