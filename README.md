@@ -4,6 +4,8 @@ nodejs connect dubbo by default protocol in zookeeper
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][npm-url]
 
+#### There are a lot of improvements in [v2.0](https://github.com/p412726700/node-zookeeper-dubbo/tree/v2.0)
+
 ### config
 ##### env
 dubbo service version
