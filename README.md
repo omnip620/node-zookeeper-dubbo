@@ -37,6 +37,9 @@ Dubbo.Foo
   .catch(console.error)
 
 ```
+### Notice
+
+**First** must wait the service init done before use it ,symbol is **Dubbo service init done**
 
 ### Config
 #### application
@@ -57,9 +60,7 @@ timeout (optional)
 ##### group
 group (optional)
 
-Notice
 
-**First** must wait the service init done before use it ,symbol is **Dubbo service init done**
 
 
 you can use  [js-to-java](https://github.com/node-modules/js-to-java)
