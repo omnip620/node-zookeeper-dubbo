@@ -106,15 +106,19 @@ var Service = function (opt) {
   this._path     = opt.path;
   this._version  = opt.version || '2.5.3.6';
   this._env      = opt.env.toUpperCase();
-  this._group    = opt.group || '';
+  this._group    = opt.group;
   this._services = opt.services;
+
+  let implicitArg = {interface: this._path};
+
+  this._version && (implicitArg.version = this._env);
+  this._group && (implicitArg.group = this._group);
 
   this._attachments = {
     $class: 'java.util.HashMap',
-    $     : {
-    }
+    $     : implicitArg
   };
-  this.zk          = new ZK(opt.conn, this._env, this._services, this._version);
+  this.zk           = new ZK(opt.conn, this._env, this._services, this._version);
 };
 
 Service.prototype.excute = function (method, args, cb) {
