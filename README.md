@@ -41,6 +41,8 @@ Dubbo.Foo
 
 **First** must wait the service init done before use it ,symbol is **Dubbo service init done**
 
+if you want coexistence between different versions,use [niv](https://github.com/scott113341/npm-install-version).
+
 ### Config
 #### application
 ###### name
