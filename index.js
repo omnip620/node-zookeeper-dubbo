@@ -10,10 +10,19 @@ const qs        = require('querystring');
 const reg       = require('./libs/register');
 
 require('./utils');
-
+// default body max length
 const DEFAULT_LEN  = 8388608; // 8 * 1024 * 1024
 let SERVICE_LENGTH = 0;
 let COUNT          = 0;
+
+/**
+ * @param {Object} opt {conn:'zk.dev.pajkdc.com:2181',
+ * dubbo:{version:PZC,
+ *        dversion:2.3.4.6,
+ *        group:'xxx'},
+ * dependencies:{}}
+ * @constructor
+ */
 
 var NZD                 = function (opt) {
   const self       = this;
@@ -41,9 +50,7 @@ NZD.prototype._applyServices = function () {
   const self = this;
 
   for (let key in refs) {
-    if (refs.hasOwnProperty(key)) {
-      NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key]);
-    }
+    NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key]);
   }
 };
 
@@ -56,6 +63,16 @@ var Service = function (zk, dubboVer, depend) {
   this._version   = depend.version;
   this._group     = depend.group;
   this._timeout   = depend.timeout || 6000;
+
+  let implicitArg = {interface: this._interface};
+
+  this._version && (implicitArg.version = this._version)
+  this._group && (implicitArg.group = this._group);
+
+  this._attachments = {
+    $class: 'java.util.HashMap',
+    $     : implicitArg
+  };
 
   this._find(this._interface);
 };
