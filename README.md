@@ -6,6 +6,8 @@ nodejs connect dubbo by default protocol in zookeeper
 
 #### There are a lot of improvements in [v2.0](https://github.com/p412726700/node-zookeeper-dubbo/tree/v2.0)
 
+if you want coexistence between different versions,use [niv](https://github.com/scott113341/npm-install-version).
+
 ### config
 ##### env
 dubbo service version
