@@ -106,7 +106,7 @@ Service.prototype._find = function (path) {
         }
       }
     }
-    if (++COUNT == SERVICE_LENGTH) {
+    if (++COUNT === SERVICE_LENGTH) {
       console.log('\x1b[32m%s\x1b[0m', 'Dubbo service init done');
     }
   }
