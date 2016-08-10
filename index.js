@@ -4,7 +4,6 @@ const hessian   = require('hessian.js');
 const url       = require('url');
 const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
-const reg       = require('./libs/register');
 require('./utils');
 
 // default body max length
@@ -15,47 +14,43 @@ const DEFAULT_LEN = 8388608; // 8 * 1024 * 1024
  *
  * @param {String} conn
  * @param {String} env
- * @param {String} dubboVer
- * @param {Object} services
  * @returns {Object} zoo
  *
  *
  * @constructor
  */
-var ZK = function (conn, env, services, dubboVer) {
+var ZK = function (conn, env) {
   if (typeof ZK.instance === 'object') {
     return ZK.instance;
   }
-  this.conn     = conn;
-  this.env      = env;
-  this.services = services || null;
-  this.methods  = [];
-  this.cached   = {};
-  this.dubboVer = dubboVer;
-  this.connect();
+  this.conn    = conn;
+  this.env     = env;
+  this.methods = [];
+  this.cached  = {};
+  //this.connect();		//为了初始化方法列表，这个方法暂缓调用。
 
   ZK.instance = this;
 };
 
 ZK.prototype.connect = function (conn) {
   var self = this;
-  !this.conn && (this.conn = conn);
-  this.client = zookeeper.createClient(this.conn, {
-    sessionTimeout: 30000,
-    spinDelay     : 1000,
-    retries       : 5
-  });
-  this.client.connect();
-  this.client.once('connected', function connect() {
-    if (self.services) {
-      self.regConsumer();
-    }
-    console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
+  //connect后再getZoo
+  return new Promise(function (resolve, reject) {
+    !self.conn && (self.conn = conn);
+    self.client = zookeeper.createClient(self.conn, {
+      sessionTimeout: 30000,
+      spinDelay     : 1000,
+      retries       : 5
+    });
+    self.client.connect();
+    self.client.once('connected', function connect() {
+      console.log('\x1b[32m%s\x1b[0m', 'Yeah zookeeper connected!');
+      resolve(self.client);
+    });
   });
 };
 
-ZK.prototype.regConsumer = reg.consumer;
-ZK.prototype.close       = function () {
+ZK.prototype.close = function () {
   this.client.close();
 };
 
@@ -69,33 +64,51 @@ ZK.prototype.close       = function () {
 
 ZK.prototype.getZoo = function (group, path, cb) {
   var self = this;
-  self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
-  function handleResult(err, children) {
-    var zoo, urlParsed;
-    if (err) {
-      if (err.code === -4) {
-        console.log(err);
+  return new Promise(function (resolve, reject) {
+    self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
+    function handleResult(err, children) {
+      var zoo, urlParsed;
+      if (err) {
+        if (err.code === -4) {
+          console.log(err);
+        }
+        return reject(err);
       }
-      return cb(err);
-    }
-    if (children && !children.length) {
-      return cb(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
-    }
-
-    for (var i = 0, l = children.length; i < l; i++) {
-      zoo = qs.parse(decodeURIComponent(children[i]));
-      if (zoo.version === self.env) {
-        break;
+      if (children && !children.length) {
+        return reject(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
       }
-    }
-    // Get the first zoo
-    urlParsed    = url.parse(Object.keys(zoo)[0]);
-    self.methods = zoo.methods.split(',');
-    zoo          = {host: urlParsed.hostname, port: urlParsed.port};
 
-    self.cacheZoo(path, zoo);
-    cb(null, zoo);
-  }
+      for (var i = 0, l = children.length; i < l; i++) {
+        zoo = qs.parse(decodeURIComponent(children[i]));
+        if (zoo.version === self.env) {
+          break;
+        }
+      }
+      // Get the first zoo
+      urlParsed    = url.parse(Object.keys(zoo)[0]);
+      self.methods = zoo.methods.split(',');
+      //注入方法
+      for (var i = 0; i < self.methods.length; i++) {
+        //console.log(self.methods[i]);
+        var rmd                = self.methods[i];
+        Service.prototype[rmd] = function () {
+          //console.log(arguments.length);
+          var newargs = [];
+          for (var j = 0; j < arguments.length; j++) {
+            var arg = arguments[j];
+            //console.log(typeof(arg));
+            newargs.push(arg);
+          }
+          //调用远程方法
+          return this.excute(rmd, newargs);
+        }
+      }
+      zoo = {host: urlParsed.hostname, port: urlParsed.port};
+      self.cacheZoo(path, zoo);
+      //cb(null, zoo);
+      return resolve(zoo);
+    }
+  }).nodeify(cb);
 };
 
 ZK.prototype.cacheZoo = function (path, zoo) {
@@ -103,26 +116,34 @@ ZK.prototype.cacheZoo = function (path, zoo) {
 };
 
 var Service = function (opt) {
-  this._path     = opt.path;
-  this._version  = opt.version || '2.5.3.6';
-  this._env      = opt.env.toUpperCase();
-  this._group    = opt.group;
-  this._services = opt.services;
+  this._path    = opt.path;
+  this._version = opt.version || '2.5.3.4';
+  this._env     = opt.env.toUpperCase();
+  this._group   = opt.group || '';
 
-  let implicitArg = {interface: this._path};
-
-  this._version && (implicitArg.version = this._env);
-  this._group && (implicitArg.group = this._group);
-
-  this._attachments = {
+  this._attchments = {
     $class: 'java.util.HashMap',
-    $     : implicitArg
+    $     : {
+      interface: this._path,
+      version  : this._env,
+      group    : this._group,
+      path     : this._path,
+      timeout  : '60000'
+    }
   };
-  this.zk           = new ZK(opt.conn, this._env, this._services, this._version);
+  this.zk          = new ZK(opt.conn, this._env);
+  //增加初始化方法，进行注入。
+  this.init        = function () {
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      self.zk.connect().then(function () {
+        self.zk.getZoo(self._group, self._path).then(resolve, reject);
+      }, reject);
+    });
+  }
 };
 
 Service.prototype.excute = function (method, args, cb) {
-
   var _method         = method;
   var _parameterTypes = '';
   var _arguments      = args;
@@ -145,8 +166,10 @@ Service.prototype.excute = function (method, args, cb) {
     buffer = this.buffer(_method, '');
   }
   var self = this;
+
   return new Promise(function (resolve, reject) {
-    var fromCache     = true;
+    var fromCache = true;
+
     var tryConnectZoo = true;
     if (self.zk.cached.hasOwnProperty(self._path)) {
       fetchData(null, self.zk.cached[self._path]);
@@ -170,6 +193,7 @@ Service.prototype.excute = function (method, args, cb) {
       if (!~self.zk.methods.indexOf(_method) && !fromCache) {
         return reject(`can't find the method:${_method}, pls check it!`);
       }
+
       client.connect(port, host, function () {
         client.write(buffer);
       });
@@ -200,10 +224,8 @@ Service.prototype.excute = function (method, args, cb) {
         }
         chunks.push(chunk);
         heap = Buffer.concat(chunks);
-
         (heap.length >= bl) && client.destroy();
       });
-
       client.on('close', function (err) {
         if (err) {
           return console.log('some err happened, so reconnect, check the err event');
@@ -213,7 +235,8 @@ Service.prototype.excute = function (method, args, cb) {
           return reject(ret);
         }
         if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
-          return resolve(null);
+          ret = 'void return';
+          return resolve(ret);
         }
 
         try {
@@ -271,7 +294,7 @@ Service.prototype.bufferBody = function (method, type, args) {
       encoder.write(args[i]);
     }
   }
-  encoder.write(this._attachments);
+  encoder.write(this._attchments);
   encoder = encoder.byteBuffer._bytes.slice(0, encoder.byteBuffer._offset);
 
   return encoder;
