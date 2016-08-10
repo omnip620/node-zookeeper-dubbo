@@ -116,10 +116,18 @@ ZK.prototype.cacheZoo = function (path, zoo) {
 };
 
 var Service = function (opt) {
+<<<<<<< HEAD
   this._path    = opt.path;
   this._version = opt.version || '2.5.3.4';
   this._env     = opt.env.toUpperCase();
   this._group   = opt.group || '';
+=======
+  this._path     = opt.path;
+  this._version  = opt.version || '2.5.3.6';
+  this._env      = opt.env ? opt.env.toUpperCase() : '' ;  //prevent the nullPointerException
+  this._group    = opt.group || '';
+  this._services = opt.services;
+>>>>>>> 724519904e2fa0cbf8a6566f4f91eef4b2386b14
 
   this._attchments = {
     $class: 'java.util.HashMap',
