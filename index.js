@@ -109,10 +109,12 @@ var Service = function (opt) {
   this._group    = opt.group;
   this._services = opt.services;
 
-  let implicitArg = {interface: this._path};
+  let implicitArg = {path: this._path, interface: this._path};
 
   this._version && (implicitArg.version = this._env);
   this._group && (implicitArg.group = this._group);
+
+  implicitArg.timeout = '60000';
 
   this._attachments = {
     $class: 'java.util.HashMap',
@@ -122,7 +124,6 @@ var Service = function (opt) {
 };
 
 Service.prototype.excute = function (method, args, cb) {
-
   var _method         = method;
   var _parameterTypes = '';
   var _arguments      = args;
