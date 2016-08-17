@@ -251,7 +251,7 @@ Service.prototype.bufferHead = function (length) {
   if (length - 256 < 0) {
     head.splice(i, 1, length - 256);
   } else {
-    while (length - 256 > 0) {
+    while (length - 256 >= 0) {
       head.splice(i--, 1, length % 256);
       length = length >> 8;
     }
