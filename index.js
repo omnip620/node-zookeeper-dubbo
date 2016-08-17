@@ -15,6 +15,15 @@ const DEFAULT_LEN  = 8388608; // 8 * 1024 * 1024
 let SERVICE_LENGTH = 0;
 let COUNT          = 0;
 
+/**
+ * @param {Object} opt {conn:'zk.dev.pajkdc.com:2181',
+ * dubbo:{version:PZC,
+ *        dversion:2.3.4.6,
+ *        group:'xxx'},
+ * dependencies:{}}
+ * @constructor
+ */
+
 var NZD                 = function (opt) {
   const self       = this;
   this.dubboVer    = opt.dubboVer;
@@ -55,11 +64,10 @@ var Service = function (zk, dubboVer, depend) {
   this._group     = depend.group;
   this._timeout   = depend.timeout || 6000;
 
-  const implicitArg = {interface: this._interface};
+  const implicitArg = {interface: this._interface, path: this._interface, timeout: this._timeout};
 
   this._version && (implicitArg.version = this._version);
   this._group && (implicitArg.group = this._group);
-
   this._attachments = {
     $class: 'java.util.HashMap',
     $     : implicitArg
@@ -80,7 +88,7 @@ Service.prototype._find = function (path) {
       return console.log(err);
     }
     if (children && !children.length) {
-      return console.log(`can\'t find the service: ${path} ,pls check!`);
+      return console.log(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
     }
 
     for (let i = 0, l = children.length; i < l; i++) {
@@ -97,7 +105,7 @@ Service.prototype._find = function (path) {
         }
       }
     }
-    if (++COUNT === SERVICE_LENGTH) {
+    if (++COUNT == SERVICE_LENGTH) {
       console.log('\x1b[32m%s\x1b[0m', 'Dubbo service init done');
     }
   }
@@ -132,10 +140,10 @@ Service.prototype._execute = function (method, args) {
     const host     = self._hosts[Math.random() * self._hosts.length | 0].split(':');
     const hostName = host[0];
     const port     = host[1];
-    const chunks   = [];
-    let bl         = 16;
-    let ret        = null;
-    let heap;
+    var bl         = 16;
+    var ret        = null;
+    var chunks     = [];
+    var heap;
     client.connect(port, hostName, function () {
       client.write(buffer);
     });
@@ -200,12 +208,13 @@ Service.prototype.bufferHead = function (length) {
     throw new Error(`Data length too large: ${length}, max payload: ${DEFAULT_LEN}`);
   }
   // 构造body长度信息
+
   if (length - 256 < 0) {
     head.splice(i, 1, length - 256);
   } else {
-    while (length - 256 > 0) {
+    while (length - 256 >= 0) {
       head.splice(i--, 1, length % 256);
-      length = length >> 8;
+      length >>= 8;
     }
     head.splice(i, 1, length);
   }
