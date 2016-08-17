@@ -15,15 +15,6 @@ const DEFAULT_LEN  = 8388608; // 8 * 1024 * 1024
 let SERVICE_LENGTH = 0;
 let COUNT          = 0;
 
-/**
- * @param {Object} opt {conn:'zk.dev.pajkdc.com:2181',
- * dubbo:{version:PZC,
- *        dversion:2.3.4.6,
- *        group:'xxx'},
- * dependencies:{}}
- * @constructor
- */
-
 var NZD                 = function (opt) {
   const self       = this;
   this.dubboVer    = opt.dubboVer;
@@ -49,7 +40,7 @@ NZD.prototype._applyServices = function () {
   const refs = this.dependencies;
   const self = this;
 
-  for (let key in refs) {
+  for (const key in refs) {
     NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key]);
   }
 };
@@ -64,9 +55,9 @@ var Service = function (zk, dubboVer, depend) {
   this._group     = depend.group;
   this._timeout   = depend.timeout || 6000;
 
-  let implicitArg = {interface: this._interface};
+  const implicitArg = {interface: this._interface};
 
-  this._version && (implicitArg.version = this._version)
+  this._version && (implicitArg.version = this._version);
   this._group && (implicitArg.group = this._group);
 
   this._attachments = {
@@ -89,7 +80,7 @@ Service.prototype._find = function (path) {
       return console.log(err);
     }
     if (children && !children.length) {
-      return console.log(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
+      return console.log(`can\'t find the service: ${path} ,pls check!`);
     }
 
     for (let i = 0, l = children.length; i < l; i++) {
@@ -141,10 +132,10 @@ Service.prototype._execute = function (method, args) {
     const host     = self._hosts[Math.random() * self._hosts.length | 0].split(':');
     const hostName = host[0];
     const port     = host[1];
-    var bl         = 16;
-    var ret        = null;
-    var chunks     = [];
-    var heap;
+    const chunks   = [];
+    let bl         = 16;
+    let ret        = null;
+    let heap;
     client.connect(port, hostName, function () {
       client.write(buffer);
     });
