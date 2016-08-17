@@ -67,7 +67,6 @@ function consumer() {
       check      : 'false',
       dubbo      : self.dubboVer,
       interface  : '',
-      methods    : '',
       revision   : self.env,
       version    : self.env,
       side       : 'consumer',
