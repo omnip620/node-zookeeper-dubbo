@@ -49,14 +49,14 @@ function ip() {
 }
 
 function consumer() {
-  let self  = this;
-  let paths = [];
-  let host  = ip();
+  const self  = this;
+  const paths = [];
+  const host  = ip();
 
-  let dependencies = self.dependencies;
-  let serv;
+  const dependencies = self.dependencies;
+  let serv; //临时存储服务
 
-  let info = {
+  const info = {
     protocol: 'consumer',
     slashes : 'true',
     host    : '',
@@ -73,7 +73,7 @@ function consumer() {
     }
   };
 
-  for (let s in dependencies) {
+  for (const s in dependencies) {
     if (dependencies.hasOwnProperty(s)) {
       serv = dependencies[s];
     }

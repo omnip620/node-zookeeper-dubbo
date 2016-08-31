@@ -3,15 +3,15 @@
  */
 'use strict';
 const net       = require('net');
-const hessian   = require('hessian.js');
 const url       = require('url');
 const zookeeper = require('node-zookeeper-client');
 const qs        = require('querystring');
 const reg       = require('./libs/register');
+const decode    = require('./libs/decode');
+const Encode    = require('./libs/encode').Encode;
 
 require('./utils');
-// default body max length
-const DEFAULT_LEN  = 8388608; // 8 * 1024 * 1024
+
 let SERVICE_LENGTH = 0;
 let COUNT          = 0;
 
@@ -49,31 +49,26 @@ NZD.prototype._applyServices = function () {
   const refs = this.dependencies;
   const self = this;
 
-  for (const key in refs) {
+  for (let key in refs) {
     NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key]);
   }
 };
 
 var Service = function (zk, dubboVer, depend) {
-  this._zk    = zk;
-  this._hosts = [];
-  this._dver  = dubboVer || '2.5.3.6';
+  this._zk      = zk;
+  this._hosts   = [];
+  this._version = depend.version;
+  this._group   = depend.group;
 
-  this._interface = depend.interface;
-  this._version   = depend.version;
-  this._group     = depend.group;
-  this._timeout   = depend.timeout || 6000;
+  this._encodeParam = {
+    _dver     : dubboVer || '2.5.3.6',
+    _interface: depend.interface,
+    _version  : depend.version,
+    _group    : depend.group,
+    _timeout  : depend.timeout || 6000
+  }
 
-  const implicitArg = {interface: this._interface, path: this._interface, timeout: this._timeout};
-
-  this._version && (implicitArg.version = this._version);
-  this._group && (implicitArg.group = this._group);
-  this._attachments = {
-    $class: 'java.util.HashMap',
-    $     : implicitArg
-  };
-
-  this._find(this._interface);
+  this._find(depend.interface);
 };
 
 Service.prototype._find = function (path) {
@@ -105,51 +100,31 @@ Service.prototype._find = function (path) {
         }
       }
     }
-    if (++COUNT == SERVICE_LENGTH) {
+    if (++COUNT === SERVICE_LENGTH) {
       console.log('\x1b[32m%s\x1b[0m', 'Dubbo service init done');
     }
   }
 };
 
 Service.prototype._execute = function (method, args) {
-  args       = Array.from(args);
-  const self = this;
-
-  const typeRef      = {
-    boolean: 'Z', int: 'I', short: 'S',
-    long   : 'J', double: 'D', float: 'F'
-  };
-  let parameterTypes = '';
-  let buffer, type;
-
-  if (args.length) {
-    for (var i = 0, l = args.length; i < l; i++) {
-      type = args[i]['$class'];
-      parameterTypes += type && ~type.indexOf('.')
-        ? 'L' + type.replace(/\./gi, '/') + ';'
-        : typeRef[type];
-    }
-
-    buffer = this.buffer(method, parameterTypes, args);
-  } else {
-    buffer = this.buffer(method, '');
-  }
+  args                      = Array.from(args);
+  const self                = this;
+  this._encodeParam._method = method;
+  this._encodeParam._args   = args;
+  const buffer              = new Encode(this._encodeParam);
 
   return new Promise(function (resolve, reject) {
-    const client   = new net.Socket();
-    const host     = self._hosts[Math.random() * self._hosts.length | 0].split(':');
-    const hostName = host[0];
-    const port     = host[1];
-    var bl         = 16;
-    var ret        = null;
-    var chunks     = [];
-    var heap;
-    client.connect(port, hostName, function () {
+    const client = new net.Socket();
+    const host   = self._hosts[Math.random() * self._hosts.length | 0].split(':');
+    let bl       = 16;
+    const chunks = [];
+    let heap;
+    client.connect(host[1], host[0], function () {
       client.write(buffer);
     });
 
     client.on('error', function (err) {
-      console.log(err);
+      self._execute(method, args, host);
     });
 
     client.on('data', function (chunk) {
@@ -170,72 +145,14 @@ Service.prototype._execute = function (method, args) {
       if (err) {
         return console.log('some err occurred, so reconnect, check the err event');
       }
-      if (heap[3] !== 20) {
-        ret = heap.slice(18, heap.length - 1).toString(); // error捕获
-        return reject(ret);
-      }
-      if (heap[15] === 3 && heap.length < 20) { // 判断是否没有返回值
-        return resolve(null);
-      }
-
-      try {
-        var offset = heap[16] === 145 ? 17 : 18; // 判断传入参数是否有误
-        var buf    = new hessian.DecoderV2(heap.slice(offset, heap.length));
-        var _ret   = buf.read();
-        if (_ret instanceof Error || offset === 18) {
-          return reject(_ret);
+      decode(heap, function (err, result) {
+        if (err) {
+          return reject(err);
         }
-        ret = _ret;
-      } catch (err) {
-        return reject(err);
-      }
-      return resolve(ret);
+        return resolve(result);
+      })
     });
   });
-};
-
-Service.prototype.buffer = function (method, type, args) {
-  var bufferBody = this.bufferBody(method, type, args);
-  var bufferHead = this.bufferHead(bufferBody.length);
-  return Buffer.concat([bufferHead, bufferBody]);
-};
-
-Service.prototype.bufferHead = function (length) {
-  var head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  var i    = 15;
-
-  if (length > DEFAULT_LEN) {
-    throw new Error(`Data length too large: ${length}, max payload: ${DEFAULT_LEN}`);
-  }
-  // 构造body长度信息
-
-  if (length - 256 < 0) {
-    head.splice(i, 1, length - 256);
-  } else {
-    while (length - 256 >= 0) {
-      head.splice(i--, 1, length % 256);
-      length >>= 8;
-    }
-    head.splice(i, 1, length);
-  }
-  return new Buffer(head);
-};
-
-Service.prototype.bufferBody = function (method, type, args) {
-  var encoder = new hessian.EncoderV2();
-  encoder.write(this._dver);
-  encoder.write(this._interface);
-  encoder.write(this._version);
-  encoder.write(method);
-  encoder.write(type);
-  if (args && args.length) {
-    for (var i = 0, len = args.length; i < len; ++i) {
-      encoder.write(args[i]);
-    }
-  }
-  encoder.write(this._attachments);
-  encoder = encoder.byteBuffer._bytes.slice(0, encoder.byteBuffer._offset);
-  return encoder;
 };
 
 module.exports = NZD;
