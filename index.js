@@ -73,11 +73,12 @@ var Service = function (zk, dubboVer, depend) {
 };
 
 Service.prototype._find = function (path, cb) {
-  const self = this;
+  const self  = this;
+  self._hosts = [];
   this._zk.getChildren(`/dubbo/${path}/providers`, watch, handleResult);
 
   function watch(event) {
-    self._find(path, cb)
+    self._find(path)
   }
 
   function handleResult(err, children) {
@@ -117,9 +118,8 @@ Service.prototype._find = function (path, cb) {
 };
 
 Service.prototype._flush = function (cb) {
-  this._hosts = [];
   this._find(this._interface, cb)
-}
+};
 
 Service.prototype._execute = function (method, args) {
   const self                = this;
