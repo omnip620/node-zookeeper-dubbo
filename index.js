@@ -69,7 +69,12 @@ ZK.prototype.close       = function () {
 
 ZK.prototype.getZoo = function (group, path, cb) {
   var self = this;
-  self.client.getChildren('/dubbo/' + path + '/providers', handleResult);
+  self.client.getChildren('/dubbo/' + path + '/providers', watch, handleResult);
+
+  function watch(event) {
+    self.getZoo(group, path, cb);
+  }
+
   function handleResult(err, children) {
     var zoo, urlParsed;
     if (err) {
