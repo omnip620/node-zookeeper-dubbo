@@ -55,10 +55,11 @@ NZD.prototype._applyServices = function () {
 };
 
 var Service = function (zk, dubboVer, depend) {
-  this._zk      = zk;
-  this._hosts   = [];
-  this._version = depend.version;
-  this._group   = depend.group;
+  this._zk        = zk;
+  this._hosts     = [];
+  this._version   = depend.version;
+  this._group     = depend.group;
+  this._interface = depend.interface;
 
   this._encodeParam = {
     _dver     : dubboVer || '2.5.3.6',
@@ -71,9 +72,14 @@ var Service = function (zk, dubboVer, depend) {
   this._find(depend.interface);
 };
 
-Service.prototype._find = function (path) {
+Service.prototype._find = function (path, cb) {
   const self = this;
-  this._zk.getChildren(`/dubbo/${path}/providers`, handleResult);
+  this._zk.getChildren(`/dubbo/${path}/providers`, watch, handleResult);
+
+  function watch(event) {
+    self._find(path, cb)
+  }
+
   function handleResult(err, children) {
     let zoo;
     if (err) {
@@ -94,11 +100,15 @@ Service.prototype._find = function (path) {
         for (let i = 0, l = methods.length; i < l; i++) {
           self[methods[i]] = (function (method) {
             return function () {
-              return self._execute(method, arguments);
+              return self._execute(method, Array.from(arguments));
             };
           })(methods[i]);
         }
+
       }
+    }
+    if (typeof cb === 'function') {
+      return cb();
     }
     if (++COUNT === SERVICE_LENGTH) {
       console.log('\x1b[32m%s\x1b[0m', 'Dubbo service init done');
@@ -106,8 +116,12 @@ Service.prototype._find = function (path) {
   }
 };
 
+Service.prototype._flush = function (cb) {
+  this._hosts = [];
+  this._find(this._interface, cb)
+}
+
 Service.prototype._execute = function (method, args) {
-  args                      = Array.from(args);
   const self                = this;
   this._encodeParam._method = method;
   this._encodeParam._args   = args;
@@ -115,16 +129,21 @@ Service.prototype._execute = function (method, args) {
 
   return new Promise(function (resolve, reject) {
     const client = new net.Socket();
-    const host   = self._hosts[Math.random() * self._hosts.length | 0].split(':');
-    let bl       = 16;
+    let host     = self._hosts[Math.random() * self._hosts.length | 0].split(':');
     const chunks = [];
     let heap;
+    let bl       = 16;
     client.connect(host[1], host[0], function () {
       client.write(buffer);
     });
 
     client.on('error', function (err) {
-      self._execute(method, args, host);
+      self._flush(function () {
+        host = self._hosts[Math.random() * self._hosts.length | 0].split(':');
+        client.connect(host[1], host[0], function () {
+          client.write(buffer);
+        });
+      })
     });
 
     client.on('data', function (chunk) {
@@ -137,20 +156,20 @@ Service.prototype._execute = function (method, args) {
       }
       chunks.push(chunk);
       heap = Buffer.concat(chunks);
-
       (heap.length >= bl) && client.destroy();
     });
 
     client.on('close', function (err) {
-      if (err) {
-        return console.log('some err occurred, so reconnect, check the err event');
+      if (!err) {
+
+        decode(heap, function (err, result) {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(result);
+        })
       }
-      decode(heap, function (err, result) {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(result);
-      })
+
     });
   });
 };
