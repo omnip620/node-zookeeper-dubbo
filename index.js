@@ -172,6 +172,7 @@ Service.prototype.excute = function (method, args, cb) {
       var ret    = null;
       var chunks = [];
       var heap;
+      var bl_inited = false;
 
       if (!~self.zk.methods.indexOf(_method) && !fromCache) {
         return reject(`can't find the method:${_method}, pls check it!`);
@@ -197,17 +198,21 @@ Service.prototype.excute = function (method, args, cb) {
       });
 
       client.on('data', function (chunk) {
-        if (!chunks.length) {
-          var arr = Array.prototype.slice.call(chunk.slice(0, 16));
-          var i   = 0;
-          while (i < 3) {
-            bl += arr.pop() * Math.pow(255, i++);
-          }
-        }
         chunks.push(chunk);
         heap = Buffer.concat(chunks);
 
-        (heap.length >= bl) && client.destroy();
+        if (!bl_inited &&  heap.length >= 16) {
+
+          bl_inited = true;
+          var arr = Array.prototype.slice.call(heap.slice(0, 16));
+          var i   = 0;
+          while (i < 3) {
+            bl += arr.pop() * Math.pow(256, i++);
+          }
+        }
+        if( bl_inited ){
+            (heap.length >= bl) && client.destroy();
+        }
       });
 
       client.on('close', function (err) {
