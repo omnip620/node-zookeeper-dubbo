@@ -20,7 +20,7 @@ const opt={
   }  
 }
 
-const Dubbo=nzd(opt);
+const Dubbo=new nzd(opt);
 
 const customerObj = {
   $class: 'com.xxx.XXXDTO',
