@@ -187,6 +187,6 @@ Temporary Items
 .apdisk
 ### SVN template
 .svn/
-test/
+test
 
 # Created by .ignore support plugin (hsz.mobi)

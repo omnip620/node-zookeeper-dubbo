@@ -7,16 +7,16 @@ const DEFAULT_LEN  = 8388608; // 8 * 1024 * 1024 default body max length
 
 function Encode(opt) {
   this._opt = opt;
-  let body = this._body(opt._method, opt._args);
-  let head = this._head(body.length);
+  const body = this._body(opt._method, opt._args);
+  const head = this._head(body.length);
   return Buffer.concat([head, body]);
 }
 
 Encode.prototype._head = function (len) {
-  let head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const head = [0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   let i    = 15;
   if (len > DEFAULT_LEN) {
-    throw new Error(`Data length too large: ${length}, max payload: ${DEFAULT_LEN}`);
+    throw new Error(`Data length too large: ${len}, max payload: ${DEFAULT_LEN}`);
   }
   while (len >= 256) {
     head.splice(i--, 1, len % 256);
@@ -27,7 +27,7 @@ Encode.prototype._head = function (len) {
 }
 
 Encode.prototype._body = function (method, args) {
-  let body = new Encoder();
+  const body = new Encoder();
   body.write(this._opt._dver || '2.5.3.6');
   body.write(this._opt._interface);
   body.write(this._opt._version);
@@ -57,9 +57,14 @@ Encode.prototype._argsType = function (args) {
 
   for (var i = 0, l = args.length; i < l; i++) {
     type = args[i]['$class'];
-    parameterTypes += type && ~type.indexOf('.')
-      ? 'L' + type.replace(/\./gi, '/') + ';'
-      : typeRef[type];
+
+    if (type.charAt(0) === '[') {
+      parameterTypes += '[L' + type.slice(1).replace(/\./gi, '/') + ';';
+    } else {
+      parameterTypes += type && ~type.indexOf('.')
+        ? 'L' + type.replace(/\./gi, '/') + ';'
+        : typeRef[type];
+    }
   }
 
   return parameterTypes;
