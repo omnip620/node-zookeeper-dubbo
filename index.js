@@ -151,7 +151,7 @@ Service.prototype._execute = function (method, args) {
         var arr = Array.prototype.slice.call(chunk.slice(0, 16));
         var i   = 0;
         while (i < 3) {
-          bl += arr.pop() * Math.pow(255, i++);
+          bl += arr.pop() * Math.pow(256, i++);
         }
       }
       chunks.push(chunk);
