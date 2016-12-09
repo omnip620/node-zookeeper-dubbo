@@ -28,6 +28,7 @@ var NZD                 = function (opt) {
   const self       = this;
   this.dubboVer    = opt.dubboVer;
   this.application = opt.application;
+  this.root        = opt.root||'dubbo';
 
   this.dependencies = opt.dependencies || {};
   SERVICE_LENGTH    = Object.keys(this.dependencies).length;
@@ -75,7 +76,7 @@ var Service = function (zk, dubboVer, depend) {
 Service.prototype._find = function (path, cb) {
   const self  = this;
   self._hosts = [];
-  this._zk.getChildren(`/dubbo/${path}/providers`, watch, handleResult);
+  this._zk.getChildren(`/${this.root}/${path}/providers`, watch, handleResult);
 
   function watch(event) {
     self._find(path)
