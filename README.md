@@ -14,6 +14,7 @@ const opt={
   application:{name:'fxxk'},
   register:'www.cctv.com:2181',
   dubboVer:'2.5.3.6',
+  root:'my_dubbo',
   dependencies:{
     Foo:{interface:'com.service.Foo',version:'LATEST',timeout:6000,group:'isis'},
     Bar:{interface:'com.service.Bar',version:'LATEST',timeout:6000,group:'gcd'}
@@ -57,6 +58,8 @@ you application name
 zookeeper conn url
 #### dubboVer
 the dubbo version
+#### root
+root dubbo dir node in zk ,default 'dubbo'
 #### dependencies
 the services you need to with
 ##### interface
