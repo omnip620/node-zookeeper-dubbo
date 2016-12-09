@@ -9,7 +9,7 @@ nodejs connect dubbo by default protocol in zookeeper
 
 ```javascript
 const nzd=require('node-zookeeper-dubbo');
-
+const app=require('express')();
 const opt={
   application:{name:'fxxk'},
   register:'www.cctv.com:2181',
@@ -31,10 +31,16 @@ const customerObj = {
   }
 };
 
-Dubbo.Foo
-  .xxMethod({'$class': 'java.lang.Long', '$': '10000000'},customerObj)
-  .then(console.log)
-  .catch(console.error)
+app.get('/foo',(req,res)=>{
+  Dubbo.Foo
+    .xxMethod({'$class': 'java.lang.Long', '$': '10000000'},customerObj)
+    .then(data=>res.send(data))
+    .catch(err=>res.send(err))
+})
+
+app.listen(9090)
+
+
 
 ```
 ### Notice
