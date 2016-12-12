@@ -28,6 +28,7 @@ var NZD                 = function (opt) {
   const self       = this;
   this.dubboVer    = opt.dubboVer;
   this.application = opt.application;
+  this._root        = opt.root||'dubbo';
 
   this.dependencies = opt.dependencies || {};
   SERVICE_LENGTH    = Object.keys(this.dependencies).length;
@@ -50,7 +51,7 @@ NZD.prototype._applyServices = function () {
   const self = this;
 
   for (let key in refs) {
-    NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key]);
+    NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key], this._root);
   }
 };
 
@@ -60,6 +61,7 @@ var Service = function (zk, dubboVer, depend) {
   this._version   = depend.version;
   this._group     = depend.group;
   this._interface = depend.interface;
+  this._root      = root;
 
   this._encodeParam = {
     _dver     : dubboVer || '2.5.3.6',
@@ -75,7 +77,7 @@ var Service = function (zk, dubboVer, depend) {
 Service.prototype._find = function (path, cb) {
   const self  = this;
   self._hosts = [];
-  this._zk.getChildren(`/dubbo/${path}/providers`, watch, handleResult);
+  this._zk.getChildren(`/${this._root}/${path}/providers`, watch, handleResult);
 
   function watch(event) {
     self._find(path)
