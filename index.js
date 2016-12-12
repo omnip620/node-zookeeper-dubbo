@@ -55,7 +55,7 @@ NZD.prototype._applyServices = function () {
   }
 };
 
-var Service = function (zk, dubboVer, depend) {
+var Service = function (zk, dubboVer, depend, root) {
   this._zk        = zk;
   this._hosts     = [];
   this._version   = depend.version;
