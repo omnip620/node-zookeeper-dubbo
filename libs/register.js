@@ -82,6 +82,7 @@ function consumer() {
     info.query.interface = serv.interface;
     info.query.revision  = serv.version;
     info.query.version   = serv.version;
+    info.query.group     = serv.group;
     paths.push(`/${self._root}/${serv.interface}/consumers/${encodeURIComponent(url.format(info))}`);
   }
 
