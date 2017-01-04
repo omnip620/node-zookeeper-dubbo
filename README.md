@@ -2,7 +2,6 @@
 nodejs通过dubbo默认协议通信
 
 [![NPM version][npm-image]][npm-url]
-[![Downloads][downloads-image]][npm-url]
 
 
 ### Usage
