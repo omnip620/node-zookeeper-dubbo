@@ -13,6 +13,7 @@ const opt={
   application:{name:'fxxk'},
   register:'www.cctv.com:2181',
   dubboVer:'2.5.3.6',
+  root:'dubbo',
   dependencies:{
     Foo:{interface:'com.service.Foo',version:'LATEST',timeout:6000,group:'isis'},
     Bar:{interface:'com.service.Bar',version:'LATEST',timeout:6000,group:'gcd'}
@@ -56,6 +57,8 @@ app.listen(9090)
 zookeeper连接字符串
 #### dubboVer
 dubbo版本
+#### root
+注册到zk上的根节点，默认为dubbo
 #### dependencies
 依赖的服务列表
 ##### interface
@@ -95,5 +98,3 @@ var arg1=java('int',123);
 [npm-image]:http://img.shields.io/npm/v/node-zookeeper-dubbo.svg?style=flat-square
 [npm-url]:https://npmjs.org/package/node-zookeeper-dubbo?style=flat-square
 [downloads-image]:http://img.shields.io/npm/dm/node-zookeeper-dubbo.svg?style=flat-square
-
-
