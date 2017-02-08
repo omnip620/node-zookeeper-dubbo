@@ -59,7 +59,9 @@ Encode.prototype._argsType = function (args) {
     type = args[i]['$class'];
 
     if (type.charAt(0) === '[') {
-      parameterTypes += '[L' + type.slice(1).replace(/\./gi, '/') + ';';
+      parameterTypes += ~type.indexOf('.')
+        ? '[L' + type.slice(1).replace(/\./gi, '/') + ';'
+        : '[' + typeRef[type.slice(1)];
     } else {
       parameterTypes += type && ~type.indexOf('.')
         ? 'L' + type.replace(/\./gi, '/') + ';'
