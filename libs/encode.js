@@ -32,6 +32,10 @@ Encode.prototype._body = function (method, args) {
   body.write(this._opt._interface);
   body.write(this._opt._version);
   body.write(this._opt._method);
+  var ver = this._opt._dver || '2.5.3.6';
+  if(ver.split('.')[0] >= '2' && ver.split('.')[1] >= '8'){
+    body.write(-1);  //for dubbox ^2.8.0
+  }
   body.write(this._argsType(args));
   if (args && args.length) {
     for (var i = 0, len = args.length; i < len; ++i) {
