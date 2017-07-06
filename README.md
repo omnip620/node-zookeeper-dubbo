@@ -15,10 +15,25 @@ const opt={
   dubboVer:'2.5.3.6',
   root:'dubbo',
   dependencies:{
-    Foo:{interface:'com.service.Foo',version:'LATEST',timeout:6000,group:'isis'},
-    Bar:{interface:'com.service.Bar',version:'LATEST',timeout:6000,group:'gcd'}
+    Foo:{
+      interface:'com.service.Foo',
+      version:'LATEST',
+      timeout:6000,
+      group:'isis',
+      methodSignature: {
+        findById = (id) => [ {'$class': 'java.lang.Long', '$': id} ],
+        findByName = (name) => (java) => [ java.String(name) ],
+      }
+    },
+    Bar:{
+      interface:'com.service.Bar',
+      version:'LATEST',
+      timeout:6000,
+      group:'gcd'
+    }
   }  
 }
+opt.java = require('js-to-java')
 
 const Dubbo=new nzd(opt);
 
@@ -34,6 +49,13 @@ const customerObj = {
 app.get('/foo',(req,res)=>{
   Dubbo.Foo
     .xxMethod({'$class': 'java.lang.Long', '$': '10000000'},customerObj)
+    .then(data=>res.send(data))
+    .catch(err=>res.send(err))
+})
+
+app.get('/foo/findById',(req,res)=>{
+  Dubbo.Foo
+    .findById(10000)
     .then(data=>res.send(data))
     .catch(err=>res.send(err))
 })
@@ -69,6 +91,8 @@ dubbo版本
 超时时间，可选，默认6000
 ##### group
 分组，可选
+##### methodSignature
+方法签名，可选
 
 
 

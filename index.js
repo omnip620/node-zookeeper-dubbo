@@ -9,6 +9,7 @@ const qs        = require('querystring');
 const reg       = require('./libs/register');
 const decode    = require('./libs/decode');
 const Encode    = require('./libs/encode').Encode;
+let Java = null; //require('js-to-java');
 
 require('./utils');
 
@@ -24,12 +25,12 @@ let COUNT          = 0;
  * @constructor
  */
 
-var NZD                 = function (opt) {
+var NZD                 = function (opt) { 
+  Java = opt.java || Java;
   const self       = this;
   this.dubboVer    = opt.dubboVer;
   this.application = opt.application;
   this._root        = opt.root||'dubbo';
-
   this.dependencies = opt.dependencies || {};
   SERVICE_LENGTH    = Object.keys(this.dependencies).length;
   this.client       = zookeeper.createClient(opt.register, {
@@ -61,6 +62,7 @@ var Service = function (zk, dubboVer, depend, root) {
   this._version   = depend.version;
   this._group     = depend.group;
   this._interface = depend.interface;
+  this._signature = Object.assign({}, depend.methodSignature);
   this._root      = root;
 
   this._encodeParam = {
@@ -103,7 +105,12 @@ Service.prototype._find = function (path, cb) {
         for (let i = 0, l = methods.length; i < l; i++) {
           self[methods[i]] = (function (method) {
             return function () {
-              return self._execute(method, Array.from(arguments));
+              var args = Array.from(arguments);
+              if(args.length && self._signature[method]){
+                args = self._signature[method].apply(self, args);
+                if(typeof args == "function")args = args(Java);
+              }
+              return self._execute(method, args);
             };
           })(methods[i]);
         }
