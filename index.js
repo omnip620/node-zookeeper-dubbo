@@ -110,7 +110,7 @@ Service.prototype._find = function (path, cb) {
               var args = Array.from(arguments);
               if(args.length && self._signature[method]){
                 args = self._signature[method].apply(self, args);
-                if(typeof args == "function")args = args(Java);
+                if(typeof args === 'function') args = args(Java);
               }
               return self._execute(method, args);
             };
