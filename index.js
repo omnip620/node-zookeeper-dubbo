@@ -9,6 +9,7 @@ const qs        = require('querystring');
 const reg       = require('./libs/register');
 const decode    = require('./libs/decode');
 const Encode    = require('./libs/encode').Encode;
+let Java = null; //require('js-to-java');
 
 require('./utils');
 
@@ -24,12 +25,14 @@ let COUNT          = 0;
  * @constructor
  */
 
-var NZD                 = function (opt) {
+var NZD                 = function (opt) { 
+  Java = opt.java || Java;
   const self       = this;
   this.dubboVer    = opt.dubboVer;
   this.application = opt.application;
-  this._root        = opt.root||'dubbo';
-
+  this.group       = opt.group;
+  this.timeout     = opt.timeout || 6000;
+  this._root        = opt.root || 'dubbo';
   this.dependencies = opt.dependencies || {};
   SERVICE_LENGTH    = Object.keys(this.dependencies).length;
   this.client       = zookeeper.createClient(opt.register, {
@@ -50,25 +53,26 @@ NZD.prototype._applyServices = function () {
   const refs = this.dependencies;
   const self = this;
 
-  for (let key in refs) {
-    NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key], this._root);
+  for (let key in refs) { 
+    NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key], self);
   }
 };
 
-var Service = function (zk, dubboVer, depend, root) {
+var Service = function (zk, dubboVer, depend, opt) {
   this._zk        = zk;
   this._hosts     = [];
   this._version   = depend.version;
-  this._group     = depend.group;
+  this._group     = depend.group || opt.group;
   this._interface = depend.interface;
-  this._root      = root;
+  this._signature = Object.assign({}, depend.methodSignature);
+  this._root      = opt._root;
 
   this._encodeParam = {
     _dver     : dubboVer || '2.5.3.6',
     _interface: depend.interface,
     _version  : depend.version,
-    _group    : depend.group,
-    _timeout  : depend.timeout || 6000
+    _group    : depend.group || opt.group,
+    _timeout  : depend.timeout || opt.timeout
   }
 
   this._find(depend.interface);
@@ -92,7 +96,7 @@ Service.prototype._find = function (path, cb) {
       return console.log(err);
     }
     if (children && !children.length) {
-      return console.log(`can\'t find  the zoo: ${path} ,pls check dubbo service!`);
+      return console.log(`can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`);
     }
 
     for (let i = 0, l = children.length; i < l; i++) {
@@ -103,12 +107,19 @@ Service.prototype._find = function (path, cb) {
         for (let i = 0, l = methods.length; i < l; i++) {
           self[methods[i]] = (function (method) {
             return function () {
-              return self._execute(method, Array.from(arguments));
+              var args = Array.from(arguments);
+              if(args.length && self._signature[method]){
+                args = self._signature[method].apply(self, args);
+                if(typeof args === 'function') args = args(Java);
+              }
+              return self._execute(method, args);
             };
           })(methods[i]);
-        }
-
+        } 
       }
+    }
+    if (!self._hosts.length) {
+      return console.log(`can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`);
     }
     if (typeof cb === 'function') {
       return cb();
