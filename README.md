@@ -1,8 +1,6 @@
 # node-zookeeper-dubbo
 nodejs通过dubbo默认协议通信
 
-[![NPM version][npm-image]][npm-url]
-
 
 ### Usage
 
