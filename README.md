@@ -1,8 +1,6 @@
 # node-zookeeper-dubbo
 nodejs通过dubbo默认协议通信
 
-[![NPM version][npm-image]][npm-url]
-
 
 ### Usage
 
@@ -65,43 +63,31 @@ app.listen(9090)
 
 
 ```
-### Notice
+### 注意
 
-**首先** 必须等待初始化完毕才能正常使用 ,标志就是**Dubbo service init done**
+须等待初始化完毕才能正常使用，标志：**Dubbo service init done**
 
 如果要和1.x版本共存的话试试这个，[niv](https://github.com/scott113341/npm-install-version).
 
-### Config
-#### application
-###### name
-项目名
-#### register
-zookeeper连接字符串
-#### dubboVer
-dubbo版本
-#### root
-注册到zk上的根节点，默认为dubbo
-#### dependencies
-依赖的服务列表
-##### interface
-服务地址，必填
-##### version
-版本号，可选，默认2.5.3.6
-##### timeout
-超时时间，可选，默认6000
-##### group
-分组，可选
-##### methodSignature
-方法签名，可选
+### 参数配置说明
+- **application**
+  * name - 项目名称，必填
+- **register** - zookeeper服务地址，必填
+- **dubboVer** - dubbo版本，必填
+- **root** - 注册到zookeeper上的根节点名称
+- **dependencies** - 依赖的服务集，必填
+  * Foo - 自定义名称，这里方便起见用Foo作为事例，必填
+    * interface - 服务地址，必填
+    * version - 版本号，默认2.5.3.6
+    * timeout	-	超时时间，默认6000
+    * group	-	分组
+    * methodSignature	-	方法签名
 
-
-
-
-you can use  [js-to-java](https://github.com/node-modules/js-to-java)
+可以选择使用  [js-to-java](https://github.com/node-modules/js-to-java)， 能极大提高效率
 ```javascript
-var arg1={$class:'int',$:123};
-//equivalent
-var arg1=java('int',123);
+var arg={$class:'int',$:123};
+//等同于
+var arg=java('int',123);
 ```
 
 
