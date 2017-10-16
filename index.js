@@ -33,6 +33,7 @@ var NZD                 = function (opt) {
   this.group       = opt.group;
   this.timeout     = opt.timeout || 6000;
   this._root        = opt.root || 'dubbo';
+  this.withType     = opt.withType;
   this.dependencies = opt.dependencies || {};
   SERVICE_LENGTH    = Object.keys(this.dependencies).length;
   this.client       = zookeeper.createClient(opt.register, {
@@ -66,6 +67,7 @@ var Service = function (zk, dubboVer, depend, opt) {
   this._interface = depend.interface;
   this._signature = Object.assign({}, depend.methodSignature);
   this._root      = opt._root;
+  this._withType  = opt.withType;
 
   this._encodeParam = {
     _dver     : dubboVer || '2.5.3.6',
@@ -180,7 +182,7 @@ Service.prototype._execute = function (method, args) {
             return reject(err);
           }
           return resolve(result);
-        })
+        }, self._withType)
       }
 
     });
