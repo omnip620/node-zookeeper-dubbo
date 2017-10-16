@@ -20,7 +20,7 @@ const RESPONSE_VALUE          = 1;
 const RESPONSE_NULL_VALUE     = 2;
 
 
-function decode(heap, cb) {
+function decode(heap, cb, withType) {
   let flag, result;
   if (heap[3] !== Response.OK) {
     return cb(heap.slice(18, heap.length - 1).toString())
@@ -34,7 +34,7 @@ function decode(heap, cb) {
         cb(null, null);
         break;
       case RESPONSE_VALUE:
-        cb(null, result.read());
+        cb(null, result.read(withType));
         break;
       case RESPONSE_WITH_EXCEPTION:
         let excep = result.read();
