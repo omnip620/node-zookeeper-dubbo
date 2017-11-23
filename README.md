@@ -19,8 +19,8 @@ const opt={
       timeout:6000,
       group:'isis',
       methodSignature: {
-        findById = (id) => [ {'$class': 'java.lang.Long', '$': id} ],
-        findByName = (name) => (java) => [ java.String(name) ],
+        findById : (id) => [ {'$class': 'java.lang.Long', '$': id} ],
+        findByName : (name) => (java) => [ java.String(name) ],
       }
     },
     Bar:{
