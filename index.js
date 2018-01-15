@@ -53,7 +53,7 @@ NZD.prototype._applyServices = function () {
   const refs = this.dependencies;
   const self = this;
 
-  for (let key in refs) { 
+  for (const key in refs) { 
     NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key], self);
   }
 };
@@ -108,9 +108,9 @@ Service.prototype._find = function (path, cb) {
           self[methods[i]] = (function (method) {
             return function () {
               var args = Array.from(arguments);
-              if(args.length && self._signature[method]){
+              if (args.length && self._signature[method]) {
                 args = self._signature[method].apply(self, args);
-                if(typeof args === 'function') args = args(Java);
+                if (typeof args === 'function') args = args(Java);
               }
               return self._execute(method, args);
             };
@@ -140,9 +140,14 @@ Service.prototype._execute = function (method, args) {
   this._encodeParam._args   = args;
   const buffer              = new Encode(this._encodeParam);
 
+
   return new Promise(function (resolve, reject) {
+    if (self._hosts.length === 0) {
+      return reject('service can not be found, pls check')
+    }
+    
     const client = new net.Socket();
-    let host     = self._hosts[Math.random() * self._hosts.length | 0].split(':');
+    const host     = self._hosts[Math.random() * self._hosts.length | 0].split(':');
     const chunks = [];
     let heap;
     let bl       = 16;
@@ -151,12 +156,13 @@ Service.prototype._execute = function (method, args) {
     });
 
     client.on('error', function (err) {
-      self._flush(function () {
-        host = self._hosts[Math.random() * self._hosts.length | 0].split(':');
-        client.connect(host[1], host[0], function () {
-          client.write(buffer);
-        });
-      })
+      return reject('service not available, pls try later');
+      // self._flush(function () {
+      //   host = self._hosts[Math.random() * self._hosts.length | 0].split(':');
+      //   client.connect(host[1], host[0], function () {
+      //     client.write(buffer);
+      //   });
+      // })
     });
 
     client.on('data', function (chunk) {
