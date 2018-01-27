@@ -33,7 +33,7 @@ const CREATE_MODES = {
 
 function isLoopback(addr) {
   return /^(::f{4}:)?127\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/
-      .test(addr) ||
+    .test(addr) ||
     /^fe80::1$/.test(addr) ||
     /^::1$/.test(addr) ||
     /^::$/.test(addr);
@@ -52,7 +52,7 @@ function ip() {
 //检查consumer目录是否存在
 function createConsumers(client, path) {
   return new Promise(function(resolve, reject) {
-    let cpath = Path.dirname(path);
+    const cpath = Path.dirname(path);
     client.exists(cpath, function (err, stat) {
       if (err) {
         reject(err)
@@ -116,28 +116,28 @@ function consumer() {
     (function (path) {
       //检查consumers目录状态，确保存在之后再创建consumers目录下面的节点
       createConsumers(self.client, path)
-      .then(function() {
-        self.client.exists(path, function (err, stat) {
-          if (err) {
-            console.error('Reg consumer failed:' + err.stack);
-            return;
-          }
-
-          if (stat) {
-            console.log('Node exists.');
-            return;
-          }
-          self.client.create(path, CREATE_MODES.EPHEMERAL, function (err, node) {
+        .then(function() {
+          self.client.exists(path, function (err, stat) {
             if (err) {
               console.error('Reg consumer failed:' + err.stack);
+              return;
             }
+
+            if (stat) {
+              console.log('Node exists.');
+              return;
+            }
+            self.client.create(path, CREATE_MODES.EPHEMERAL, function (err, node) {
+              if (err) {
+                console.error('Reg consumer failed:' + err.stack);
+              }
+            });
           });
-        });
-      })
-      .catch(function(err) {
+        })
+        .catch(function(err) {
         //创建consumers失败
-        console.error('Create consumer node failed: ' + err.stack);
-      })
+          console.error('Create consumer node failed: ' + err.stack);
+        })
     })(paths[i]);
   }
 }
