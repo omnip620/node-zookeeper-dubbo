@@ -1,51 +1,53 @@
-'use strict';
+'use strict'
 
-var nextTick;
+let nextTick
 if (typeof setImmediate === 'function') {
-  nextTick = setImmediate;
+  nextTick = setImmediate
 } else if (typeof process === 'object' && process && process.nextTick) {
-  nextTick = process.nextTick;
+  nextTick = process.nextTick
 } else {
-  nextTick = function (cb) {
-    setTimeout(cb, 0);
-  };
+  nextTick = (cb) => {
+    setTimeout(cb, 0)
+  }
 }
 
 function nodeify(promise, cb) {
   if (typeof cb !== 'function') {
-    return promise;
+    return promise
   }
 
   return promise
-    .then(function (res) {
-      nextTick(function () {
-        cb(null, res);
-      });
+    .then((res) => {
+      nextTick(() => {
+        cb(null, res)
+      })
     })
-    .catch(function (err) {
-      cb(err);
-    });
+    .catch((err) => {
+      cb(err)
+    })
 }
 function nodeifySelf(cb) {
-  return nodeify(this, cb);
+  return nodeify(this, cb)
 }
 
 Object.assign(Promise.prototype, {
-  nodeify: nodeifySelf
-});
+  nodeify: nodeifySelf,
+})
 
-const co = function (genfun) {
-  const gen  = genfun();
+const co = (genfun) => {
+  const gen = genfun()
   const next = (value) => {
-    const ret = gen.next(value);
-    if (ret.done) return;
+    const ret = gen.next(value)
+    if (ret.done) return
     ret.value((err, val) => {
-      if (err) { return console.error(err); }
-      next(val);
-    });
-  };
-  next();
-};
+      if (err) {
+        return console.error(err)
+      }
+      return next(val)
+    })
+  }
+  next()
+}
 
-exports.nodeify = nodeify;
-exports.co      = co;
+exports.nodeify = nodeify
+exports.co = co

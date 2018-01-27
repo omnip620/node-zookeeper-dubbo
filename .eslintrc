@@ -102,3 +102,4 @@ globals:
   DTRACE_NET_SERVER_CONNECTION         : false
   LTTNG_NET_SERVER_CONNECTION          : false
   COUNTER_NET_SERVER_CONNECTION        : false
+  test                                 : true 
