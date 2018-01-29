@@ -2,6 +2,7 @@
  * Created by panzhichao on 16/8/2.
  */
 'use strict';
+const debug = require('debug')('nzd')
 const url = require('url')
 const zookeeper = require('node-zookeeper-client')
 const qs = require('querystring')
@@ -64,7 +65,7 @@ var Service = function(zk, dubboVer, depend, opt) {
   this._signature = Object.assign({}, depend.methodSignature)
   this._root = opt._root
   this._dispatcher = new Dispatcher()
-  this._excuteQueen = []
+  this.NO_NODE = true;
 
   this._encodeParam = {
     _dver: dubboVer || '2.5.3.6',
@@ -83,7 +84,7 @@ Service.prototype._find = function(path, cb) {
   this._zk.getChildren(`/${this._root}/${path}/providers`, watch, handleResult)
 
   function watch(event) {
-    console.log(event, '-------')
+    debug(event, '-------')
     self._find(path)
   }
 
@@ -96,23 +97,18 @@ Service.prototype._find = function(path, cb) {
       return console.log(err)
     }
     if (children && !children.length) {
-      return console.log(
-        `can\'t find  the zoo: ${path} group: ${
-          self._group
-        },pls check dubbo service!`
-      )
+      self.NO_NODE = true;
+      return console.log(`can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`)
     }
+
+    self.NO_NODE = false;
 
     for (let i = 0, l = children.length; i < l; i++) {
       zoo = qs.parse(decodeURIComponent(children[i]))
       if (zoo.version === self._version && zoo.group === self._group) {
         host = url.parse(Object.keys(zoo)[0]).host.split(':')
         self._hosts.push(host)
-
         self._dispatcher.insert(new Socket(host[1], host[0]))
-        self._dispatcher.insert(new Socket(host[1], host[0]))
-        self._dispatcher.insert(new Socket(host[1], host[0]))
-
         const methods = zoo.methods.split(',')
         for (let i = 0, l = methods.length; i < l; i++) {
           const method = methods[i]
@@ -132,40 +128,32 @@ Service.prototype._find = function(path, cb) {
     if (!self._hosts.length) {
       return console.log(`can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`)
     }
-    if (typeof cb === 'function') {
-      return cb()
-    }
+
     if (++COUNT === SERVICE_LENGTH) {
       console.log('\x1b[32m%s\x1b[0m', 'Dubbo service init done')
     }
   }
 }
 
-Service.prototype._flush = function(cb) {
-  this._find(this._interface, cb)
-}
-
-Service.prototype._excuteQueenHelper = function(attach, resolve, reject) {
-  this._excuteQueen.push({ attach, resolve, reject })
-}
 
 Service.prototype._execute = function(method, args, resolve, reject) {
+  debug('excute')
+  if (this.NO_NODE) {
+    return reject('can not find zoo, pls check later')
+  }
 
   const attach = Object.assign({}, this._encodeParam, {_method:method, _args:args});
   const el = {attach, resolve, reject};
 
   this._dispatcher.gain((err, conn) => {
+    if (err) {
+      return reject(err)
+    }
     conn.communicate(el, (err, done) => {
       this._dispatcher.release(conn);
     });
   })
 
-}
-
-Service.prototype._write = function() {
-  if (this._excuteQueen.length == 0) {
-    return;
-  }
 }
 
 module.exports = NZD

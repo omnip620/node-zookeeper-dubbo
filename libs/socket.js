@@ -7,11 +7,13 @@ const Socket = function(port, host) {
   this.socket = null;
   this.transmiting = false;
   this.error = null;
-  this.heartBeatLock = false;
   this.connect = false;
+
+  this.heartBeatLock = false;
+  this.heartBeatInter = null;
+
   this.resolve = null;
   this.reject = null;
-  this.heartBeatInter = null;
   this.cb = null;
 
   this.socket = net.connect(port, host);
@@ -48,28 +50,30 @@ Socket.prototype.onConnect = function() {
 
 Socket.prototype.onError = function(err) {
   this.error = err;
-  if (!this.reject) {
-    throw new Error(err);
+  if (this.cb) {
+    this.cb(err)
   }
-
-  switch (err.code) {
-    case 'EADDRINUSE':
-      this.reject('Address already in use');
-      break;
-    case 'ECONNREFUSED':
-      this.reject('Connection refused');
-      break;
-    case 'ECONNRESET':
-      this.reject('Connection reset by peer');
-      break;
-    case 'EPIPE':
-      clearInterval(this.heartBeatInter);
-      this.socket.destroy();
-      this.reject('Broken pipe');
-      break;
-    case 'ETIMEDOUT':
-      this.reject('Operation timed out');
-      break;
+  if (this.reject) {
+    switch (err.code) {
+      case 'EADDRINUSE':
+        this.reject('Address already in use');
+        break;
+      case 'ECONNREFUSED':
+        this.reject('Connection refused');
+        break;
+      case 'ECONNRESET':
+        this.reject('Connection reset by peer');
+        break;
+      case 'EPIPE':
+        clearInterval(this.heartBeatInter);
+        this.socket.destroy();
+        this.connect = false;
+        this.reject('Broken pipe');
+        break;
+      case 'ETIMEDOUT':
+        this.reject('Operation timed out');
+        break;
+    }
   }
 };
 
@@ -82,9 +86,6 @@ Socket.prototype.onData = function(data) {
 
 Socket.prototype.deSerialize = function(chunk) {
   const self = this;
-  if (this.error && this.error.code === 'EPIPE') {
-    return;
-  }
   const chunks = [];
   let bl = 16;
 
@@ -127,6 +128,11 @@ Dispatcher.prototype.remove = function(connection) {
   removeConn(this.queue, connection)
 };
 
+Dispatcher.prototype.purgeConn = function(connection) {
+  removeConn(this.queue, connection);
+  removeConn(this.busyQueue, connection);
+}
+
 Dispatcher.prototype.get = function(uid) {
   this.queue.get(uid);
 };
@@ -136,8 +142,14 @@ Dispatcher.prototype.gain = function(cb) {
 
   if (this.queue.length) {
     socket = this.queue.shift();
+    if (socket.connect === false) {
+      this.purgeConn(socket);
+      return this.gain(cb);
+    }
     this.busyQueue.push(socket);
     cb(null, socket);
+  } else if (!this.busyQueue.length) {
+    cb('no conn avaiable');
   } else {
     this.waitingTasks.push(cb);
   }
