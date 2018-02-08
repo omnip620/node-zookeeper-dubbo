@@ -4,7 +4,8 @@
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "debug": "DEBUG=nzd nodemon test/app.js"
   },
   "keywords": [
     "zookeeper",

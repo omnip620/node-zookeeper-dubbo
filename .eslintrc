@@ -2,6 +2,11 @@ env:
   node: true
   es6: true
 
+parserOptions:
+  ecmaVersion: 8
+  ecmaFeatures:
+    jsx: true
+
 rules:
   # Possible Errors
   # http://eslint.org/docs/rules/#possible-errors
@@ -102,4 +107,4 @@ globals:
   DTRACE_NET_SERVER_CONNECTION         : false
   LTTNG_NET_SERVER_CONNECTION          : false
   COUNTER_NET_SERVER_CONNECTION        : false
-  test                                 : true 
+  test                                 : true

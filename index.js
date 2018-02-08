@@ -20,12 +20,12 @@ let COUNT = 0
 
 const NZD = function(opt) {
   Java = opt.java || Java
-  const self = this
+
   this.dubboVer = opt.dubboVer
   this.application = opt.application
   this.group = opt.group
   this.timeout = opt.timeout || 6000
-  this._root = opt.root || 'dubbo'
+  this.root = opt.root || 'dubbo'
   this.dependencies = opt.dependencies || {}
   SERVICE_LENGTH = Object.keys(this.dependencies).length
   this.client = zookeeper.createClient(opt.register, {
@@ -36,8 +36,8 @@ const NZD = function(opt) {
 
   this.client.connect()
   this.client.once('connected', () => {
-    self._applyServices()
-    self._consumer()
+    this._applyServices()
+    this._consumer()
   })
 }
 NZD.prototype._consumer = reg.consumer
@@ -47,12 +47,7 @@ NZD.prototype._applyServices = function() {
   const self = this
 
   for (const key in refs) {
-    NZD.prototype[key] = new Service(
-      self.client,
-      self.dubboVer,
-      refs[key],
-      self
-    )
+    NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key], self)
   }
 }
 
@@ -63,7 +58,8 @@ var Service = function(zk, dubboVer, depend, opt) {
   this._group = depend.group || opt.group
   this._interface = depend.interface
   this._signature = Object.assign({}, depend.methodSignature)
-  this._root = opt._root
+  this._root = opt.root
+
   this._dispatcher = new Dispatcher()
   this.NO_NODE = true;
 
@@ -84,21 +80,26 @@ Service.prototype._find = function(path, cb) {
   this._zk.getChildren(`/${this._root}/${path}/providers`, watch, handleResult)
 
   function watch(event) {
-    debug(event, '-------')
+    debug(event, 'watch event')
     self._find(path)
   }
 
   function handleResult(err, children) {
-    let zoo, host
+    let zoo, host, errMsg;
     if (err) {
       if (err.code === -4) {
-        console.log(err)
+        debug(err);
       }
-      return console.log(err)
+
+      debug(err);
+      throw new Error(err);
     }
+
     if (children && !children.length) {
       self.NO_NODE = true;
-      return console.log(`can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`)
+      errMsg = `can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`;
+      debug(errMsg);
+      throw new Error(errMsg);
     }
 
     self.NO_NODE = false;
@@ -108,7 +109,10 @@ Service.prototype._find = function(path, cb) {
       if (zoo.version === self._version && zoo.group === self._group) {
         host = url.parse(Object.keys(zoo)[0]).host.split(':')
         self._hosts.push(host)
+
+        // 初始化socket
         self._dispatcher.insert(new Socket(host[1], host[0]))
+
         const methods = zoo.methods.split(',')
         for (let i = 0, l = methods.length; i < l; i++) {
           const method = methods[i]
@@ -126,7 +130,7 @@ Service.prototype._find = function(path, cb) {
       }
     }
     if (!self._hosts.length) {
-      return console.log(`can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`)
+      return console.log(`can\'t find  the zoo: ${path} group: ${self._group}, pls check dubbo service!`)
     }
 
     if (++COUNT === SERVICE_LENGTH) {
@@ -137,7 +141,6 @@ Service.prototype._find = function(path, cb) {
 
 
 Service.prototype._execute = function(method, args, resolve, reject) {
-  debug('excute')
   if (this.NO_NODE) {
     return reject('can not find zoo, pls check later')
   }
@@ -149,11 +152,13 @@ Service.prototype._execute = function(method, args, resolve, reject) {
     if (err) {
       return reject(err)
     }
-    conn.communicate(el, (err, done) => {
+    conn.invoke(el, (err, done) => {
       this._dispatcher.release(conn);
+      if (conn.connect === false) {
+        this._dispatcher.purgeConn(conn);
+      }
     });
   })
-
 }
 
 module.exports = NZD

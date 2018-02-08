@@ -1,4 +1,5 @@
 'use strict'
+const debug = require('debug')('nzd')
 const net = require('net');
 const decode = require('./decode');
 const Encode = require('./encode').Encode;
@@ -18,6 +19,9 @@ const Socket = function(port, host) {
 
   this.socket = net.connect(port, host);
 
+  // this.socket.setTimeout(6000);
+
+  this.socket.on('timeout', this.onTimeout.bind(this))
   this.socket.on('connect', this.onConnect.bind(this));
   this.socket.on('data', this.onData.bind(this));
   this.socket.on('error', this.onError.bind(this));
@@ -25,7 +29,15 @@ const Socket = function(port, host) {
   return this;
 };
 
-Socket.prototype.communicate = function({ attach, resolve, reject, release }, cb) {
+Socket.prototype.onTimeout = function () {
+  debug('socket timeout');
+  if (this.reject) {
+    this.reject('socket timeout')
+  }
+  this.socket.end();
+}
+
+Socket.prototype.invoke = function({ attach, resolve, reject }, cb) {
   this.resolve = resolve;
   this.reject = reject;
   this.cb = cb;
@@ -48,6 +60,13 @@ Socket.prototype.onConnect = function() {
     }}, 5000);
 };
 
+Socket.prototype.destroy = function (msg) {
+  clearInterval(this.heartBeatInter);
+  this.socket.destroy();
+  this.connect = false;
+  this.reject(msg);
+}
+
 Socket.prototype.onError = function(err) {
   this.error = err;
   if (this.cb) {
@@ -62,13 +81,10 @@ Socket.prototype.onError = function(err) {
         this.reject('Connection refused');
         break;
       case 'ECONNRESET':
-        this.reject('Connection reset by peer');
+        this.destroy('Connection reset by peer')
         break;
       case 'EPIPE':
-        clearInterval(this.heartBeatInter);
-        this.socket.destroy();
-        this.connect = false;
-        this.reject('Broken pipe');
+        this.destroy('Broken pipe')
         break;
       case 'ETIMEDOUT':
         this.reject('Operation timed out');
@@ -85,7 +101,6 @@ Socket.prototype.onData = function(data) {
 };
 
 Socket.prototype.deSerialize = function(chunk) {
-  const self = this;
   const chunks = [];
   let bl = 16;
 
@@ -101,14 +116,13 @@ Socket.prototype.deSerialize = function(chunk) {
 
   if (heap.length === bl) {
     decode(heap, (err, result) => {
-      self.transmiting = false;
-      self.heartBeatLock = false;
-      if (err) {
-        self.reject(err);
-      }
-      self.resolve(result);
-      self.resolve = null;
-      self.reject = null;
+      this.transmiting = false;
+      this.heartBeatLock = false;
+
+      err ? this.reject(err) : this.resolve(result);
+
+      this.resolve = null;
+      this.reject = null;
       this.cb(null, true);
     });
   }
@@ -148,13 +162,9 @@ Dispatcher.prototype.gain = function(cb) {
     }
     this.busyQueue.push(socket);
     cb(null, socket);
-  } else if (!this.busyQueue.length) {
-    cb('no conn avaiable');
   } else {
     this.waitingTasks.push(cb);
   }
-
-  // return socket;
 };
 
 Dispatcher.prototype.release = function(conn) {
@@ -167,8 +177,8 @@ Dispatcher.prototype.release = function(conn) {
 }
 
 function removeConn(arr, conn) {
-  let index;
-  if ((index = arr.indexOf(conn)) !== -1) {
+  const index = arr.indexOf(conn);
+  if (index  !== -1) {
     arr.splice(index, 1);
   }
 }

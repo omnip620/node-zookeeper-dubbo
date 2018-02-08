@@ -109,7 +109,7 @@ function consumer() {
     info.query.revision  = serv.version;
     info.query.version   = serv.version;
     info.query.group     = serv.group;
-    paths.push(`/${self._root}/${serv.interface}/consumers/${encodeURIComponent(url.format(info))}`);
+    paths.push(`/${self.root}/${serv.interface}/consumers/${encodeURIComponent(url.format(info))}`);
   }
 
   for (let i = 0, l = paths.length; i < l; i++) {
