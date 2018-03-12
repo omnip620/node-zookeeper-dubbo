@@ -21,7 +21,6 @@ let COUNT = 0
 const NZD = function(opt) {
   Java = opt.java || Java
 
-  this.dubboVer = opt.dubboVer
   this.application = opt.application
   this.group = opt.group
   this.timeout = opt.timeout || 6000
@@ -47,11 +46,11 @@ NZD.prototype._applyServices = function() {
   const self = this
 
   for (const key in refs) {
-    NZD.prototype[key] = new Service(self.client, self.dubboVer, refs[key], self)
+    NZD.prototype[key] = new Service(self.client, refs[key], self)
   }
 }
 
-var Service = function(zk, dubboVer, depend, opt) {
+var Service = function(zk, depend, opt) {
   this._zk = zk
   this._hosts = []
   this._version = depend.version
@@ -64,81 +63,79 @@ var Service = function(zk, dubboVer, depend, opt) {
   this.NO_NODE = true;
 
   this._encodeParam = {
-    _dver: dubboVer || '2.5.3.6',
+    _dver: opt.dubboVer || '2.5.3.6',
     _interface: depend.interface,
     _version: depend.version,
     _group: depend.group || opt.group,
     _timeout: depend.timeout || opt.timeout,
   }
 
-  this._find(depend.interface)
+  this._find();
 }
 
-Service.prototype._find = function(path, cb) {
-  const self = this
-  self._hosts = []
-  this._zk.getChildren(`/${this._root}/${path}/providers`, watch, handleResult)
+Service.prototype._find = function() {
+  this._zk.getChildren(`/${this._root}/${this._interface}/providers`, this.zooWatcher.bind(this), this.zooHandleRes.bind(this))
+}
 
-  function watch(event) {
-    debug(event, 'watch event')
-    self._find(path)
+Service.prototype.zooWatcher = function (event) {
+  debug(event, 'watch event')
+  this._find();
+}
+
+Service.prototype.zooHandleRes = function(err, children) {
+  let zoo, host, errMsg;
+  if (err) {
+    if (err.code === -4) {
+      debug(err);
+    }
+
+    debug(err);
+    throw new Error(err);
   }
 
-  function handleResult(err, children) {
-    let zoo, host, errMsg;
-    if (err) {
-      if (err.code === -4) {
-        debug(err);
-      }
+  if (children && !children.length) {
+    this.NO_NODE = true;
+    errMsg = `can\'t find  the service: ${this._root}/${this._interface} ${this._group ? `group:${this._group}` : ''},pls check dubbo service!`;
+    debug(errMsg);
+    throw new Error(errMsg);
+  }
 
-      debug(err);
-      throw new Error(err);
-    }
+  this.NO_NODE = false;
 
-    if (children && !children.length) {
-      self.NO_NODE = true;
-      errMsg = `can\'t find  the zoo: ${path} group: ${self._group},pls check dubbo service!`;
-      debug(errMsg);
-      throw new Error(errMsg);
-    }
+  for (let i = 0, l = children.length; i < l; i++) {
+    zoo = qs.parse(decodeURIComponent(children[i]))
+    if (zoo.version === this._version && zoo.group === this._group) {
+      host = url.parse(Object.keys(zoo)[0]).host.split(':')
+      this._hosts.push(host)
 
-    self.NO_NODE = false;
+      // init socket
+      this._dispatcher.insert(new Socket(host[1], host[0]))
 
-    for (let i = 0, l = children.length; i < l; i++) {
-      zoo = qs.parse(decodeURIComponent(children[i]))
-      if (zoo.version === self._version && zoo.group === self._group) {
-        host = url.parse(Object.keys(zoo)[0]).host.split(':')
-        self._hosts.push(host)
-
-        // 初始化socket
-        self._dispatcher.insert(new Socket(host[1], host[0]))
-
-        const methods = zoo.methods.split(',')
-        for (let i = 0, l = methods.length; i < l; i++) {
-          const method = methods[i]
-          self[method] = function() {
-            let args = Array.from(arguments)
-            if (args.length && self._signature[method]) {
-              args = self._signature[method].apply(self, args)
-              if (typeof args === 'function') args = args(Java)
-            }
-            return new Promise((resolve, reject) =>
-              self._execute(method, args, resolve, reject)
-            )
+      const methods = zoo.methods.split(',')
+      for (let i = 0, l = methods.length; i < l; i++) {
+        const method = methods[i]
+        this[method] = function() {
+          let args = Array.from(arguments)
+          if (args.length && this._signature[method]) {
+            args = this._signature[method].apply(this, args)
+            if (typeof args === 'function') args = args(Java)
           }
+          return new Promise((resolve, reject) =>
+            this._execute(method, args, resolve, reject)
+          )
         }
       }
     }
-    if (!self._hosts.length) {
-      return console.log(`can\'t find  the zoo: ${path} group: ${self._group}, pls check dubbo service!`)
-    }
+  }
 
-    if (++COUNT === SERVICE_LENGTH) {
-      console.log('\x1b[32m%s\x1b[0m', 'Dubbo service init done')
-    }
+  if (!this._hosts.length) {
+    return console.log(`can\'t find  the service: ${this._root}/${this._interface} ${this._group ? `group:${this._group}` : ''},pls check dubbo service!`)
+  }
+
+  if (++COUNT === SERVICE_LENGTH) {
+    console.log('\x1b[32m%s\x1b[0m', 'Dubbo service init done')
   }
 }
-
 
 Service.prototype._execute = function(method, args, resolve, reject) {
   if (this.NO_NODE) {
