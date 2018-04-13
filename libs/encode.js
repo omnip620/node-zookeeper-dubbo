@@ -64,7 +64,7 @@ Encode.prototype._argsType = function(args) {
   let parameterTypes = "";
   let type;
 
-  for (var i = 0, l = args.length; i < l; i++) {
+  for (var i = 0, l = args.length; i < l; i++)  {
     type = args[i]["$class"];
 
     if (type.charAt(0) === "[") {
