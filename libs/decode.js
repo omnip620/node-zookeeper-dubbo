@@ -21,13 +21,12 @@ const RESPONSE_NULL_VALUE     = 2;
 
 
 function decode(heap, cb) {
-  let flag, result;
+  const result = new decoder(heap.slice(16, heap.length));
   if (heap[3] !== Response.OK) {
-    return cb(heap.slice(18, heap.length - 1).toString())
+    return cb(result.readString())
   }
   try {
-    result = new decoder(heap.slice(16, heap.length));
-    flag   = result.readInt();
+    const flag   = result.readInt();
 
     switch (flag) {
       case RESPONSE_NULL_VALUE:

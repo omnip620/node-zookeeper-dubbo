@@ -1,8 +1,11 @@
-'use strict'
-const debug = require('debug')('nzd')
-const net = require('net');
-const decode = require('./decode');
-const Encode = require('./encode').Encode;
+"use strict";
+const debug = require("debug")("nzd");
+const net = require("net");
+const decode = require("./decode");
+const Encode = require("./encode");
+
+const HEADER_LENGTH = 16;
+const FLAG_EVENT = 0x20;
 
 const Socket = function(port, host) {
   this.socket = null;
@@ -21,21 +24,21 @@ const Socket = function(port, host) {
 
   // this.socket.setTimeout(6000);
 
-  this.socket.on('timeout', this.onTimeout.bind(this))
-  this.socket.on('connect', this.onConnect.bind(this));
-  this.socket.on('data', this.onData.bind(this));
-  this.socket.on('error', this.onError.bind(this));
+  this.socket.on("timeout", this.onTimeout.bind(this));
+  this.socket.on("connect", this.onConnect.bind(this));
+  this.socket.on("data", this.onData.bind(this));
+  this.socket.on("error", this.onError.bind(this));
 
   return this;
 };
 
-Socket.prototype.onTimeout = function () {
-  debug('socket timeout');
+Socket.prototype.onTimeout = function() {
+  debug("socket timeout");
   if (this.reject) {
-    this.reject('socket timeout')
+    this.reject("socket timeout");
   }
   this.socket.end();
-}
+};
 
 Socket.prototype.invoke = function({ attach, resolve, reject }, cb) {
   this.resolve = resolve;
@@ -56,38 +59,59 @@ Socket.prototype.onConnect = function() {
   this.connect = true;
   this.heartBeatInter = setInterval(() => {
     if (!this.heartBeatLock) {
-      this.socket.write(Buffer([0xda, 0xbb, 0xe2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01, 0x4e]));
-    }}, 5000);
+      this.socket.write(
+        Buffer([
+          0xda,
+          0xbb,
+          0xe2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0x01,
+          0x4e
+        ])
+      );
+    }
+  }, 5000);
 };
 
-Socket.prototype.destroy = function (msg) {
+Socket.prototype.destroy = function(msg) {
   clearInterval(this.heartBeatInter);
   this.socket.destroy();
   this.connect = false;
   this.reject(msg);
-}
+};
 
 Socket.prototype.onError = function(err) {
   this.error = err;
   if (this.cb) {
-    this.cb(err)
+    this.cb(err);
   }
   if (this.reject) {
     switch (err.code) {
-      case 'EADDRINUSE':
-        this.reject('Address already in use');
+      case "EADDRINUSE":
+        this.reject("Address already in use");
         break;
-      case 'ECONNREFUSED':
-        this.reject('Connection refused');
+      case "ECONNREFUSED":
+        this.reject("Connection refused");
         break;
-      case 'ECONNRESET':
-        this.destroy('Connection reset by peer')
+      case "ECONNRESET":
+        this.destroy("Connection reset by peer");
         break;
-      case 'EPIPE':
-        this.destroy('Broken pipe')
+      case "EPIPE":
+        this.destroy("Broken pipe");
         break;
-      case 'ETIMEDOUT':
-        this.reject('Operation timed out');
+      case "ETIMEDOUT":
+        this.reject("Operation timed out");
         break;
     }
   }
@@ -95,21 +119,17 @@ Socket.prototype.onError = function(err) {
 
 Socket.prototype.onData = function(data) {
   // not a heartbeat event
-  if ((data[2] & 0x20) === 0) {
+  if ((data[2] & FLAG_EVENT) === 0) {
     this.deSerialize(data);
   }
 };
 
 Socket.prototype.deSerialize = function(chunk) {
   const chunks = [];
-  let bl = 16;
+  let bl = HEADER_LENGTH;
 
   if (!chunks.length) {
-    const arr = Array.prototype.slice.call(chunk.slice(0, 16));
-    let i = 0;
-    while (i < 3) {
-      bl += arr.pop() * Math.pow(256, i++);
-    }
+    bl += chunk.readInt32BE(12);
   }
   chunks.push(chunk);
   const heap = Buffer.concat(chunks);
@@ -139,13 +159,13 @@ Dispatcher.prototype.insert = function(socket) {
 };
 
 Dispatcher.prototype.remove = function(connection) {
-  removeConn(this.queue, connection)
+  removeConn(this.queue, connection);
 };
 
 Dispatcher.prototype.purgeConn = function(connection) {
   removeConn(this.queue, connection);
   removeConn(this.busyQueue, connection);
-}
+};
 
 Dispatcher.prototype.get = function(uid) {
   this.queue.get(uid);
@@ -171,17 +191,18 @@ Dispatcher.prototype.release = function(conn) {
   removeConn(this.busyQueue, conn);
   this.queue.push(conn);
   if (this.waitingTasks.length) {
-    this.gain(this.waitingTasks.shift())
+    this.gain(this.waitingTasks.shift());
   }
-
-}
+};
 
 function removeConn(arr, conn) {
   const index = arr.indexOf(conn);
-  if (index  !== -1) {
+  if (index !== -1) {
     arr.splice(index, 1);
   }
 }
 
-exports.Dispatcher = Dispatcher;
-exports.Socket = Socket;
+exports = {
+  Dispatcher,
+  Socket
+};

@@ -68,7 +68,7 @@ rules:
   no-mixed-spaces-and-tabs: 2
   no-multiple-empty-lines: [2, {max: 2}]
   no-trailing-spaces: 2
-  quotes: [2, "single", "avoid-escape"]
+  quotes: [2, "double", "avoid-escape"]
   space-before-blocks: [2, "always"]
   space-in-parens: [2, "never"]
   space-infix-ops: 2
