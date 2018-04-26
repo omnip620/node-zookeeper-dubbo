@@ -3,6 +3,7 @@ const debug = require("debug")("nzd");
 const net = require("net");
 const decode = require("./decode");
 const Encode = require("./encode");
+const { ConnectionPoolError, EXCEPTIONS } = require("./exception");
 
 const HEADER_LENGTH = 16;
 const FLAG_EVENT = 0x20;
@@ -11,7 +12,7 @@ const Socket = function(port, host) {
   this.socket = null;
   this.transmiting = false;
   this.error = null;
-  this.connect = false;
+  this.isConnect = false;
 
   this.heartBeatLock = false;
   this.heartBeatInter = null;
@@ -56,46 +57,30 @@ Socket.prototype.invoke = function({ attach, resolve, reject }, cb) {
 };
 
 Socket.prototype.onConnect = function() {
-  this.connect = true;
+  this.isConnect = true;
   this.heartBeatInter = setInterval(() => {
     if (!this.heartBeatLock) {
-      this.socket.write(
-        Buffer([
-          0xda,
-          0xbb,
-          0xe2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0x01,
-          0x4e
-        ])
-      );
+      // prettier-ignore
+      this.socket.write(Buffer([0xda, 0xbb, 0xe2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01, 0x4e]));
     }
   }, 5000);
 };
 
 Socket.prototype.destroy = function(msg) {
+  this.isConnect = false;
+  this.reject && this.reject(msg);
   clearInterval(this.heartBeatInter);
   this.socket.destroy();
-  this.connect = false;
-  this.reject(msg);
 };
 
 Socket.prototype.onError = function(err) {
   this.error = err;
+
+  console.log(err, "-=-=");
   if (this.cb) {
     this.cb(err);
   }
+
   if (this.reject) {
     switch (err.code) {
       case "EADDRINUSE":
@@ -174,9 +159,13 @@ Dispatcher.prototype.get = function(uid) {
 Dispatcher.prototype.gain = function(cb) {
   let socket = null;
 
+  if (!this.queue.length && !this.busyQueue.length) {
+    return cb(new ConnectionPoolError(EXCEPTIONS.NO_AVAILABLE_WORKER));
+  }
+  console.log(this.queue.length, "-1111");
   if (this.queue.length) {
     socket = this.queue.shift();
-    if (socket.connect === false) {
+    if (socket.isConnect === false) {
       this.purgeConn(socket);
       return this.gain(cb);
     }
@@ -202,7 +191,7 @@ function removeConn(arr, conn) {
   }
 }
 
-exports = {
+module.exports = {
   Dispatcher,
   Socket
 };

@@ -8,15 +8,111 @@ const zookeeper = require("node-zookeeper-client");
 const qs = require("querystring");
 const reg = require("./libs/register");
 const { Dispatcher, Socket } = require("./libs/socket");
+const { Service: NewService } = require("./libs/service");
 
-// const EventEmitter = require('events');
+const EventEmitter = require("events");
 // const util = require('util');
 let Java = null; // require('js-to-java');
 
-require("./utils");
-
 let SERVICE_LENGTH = 0;
 let COUNT = 0;
+
+class Yoke extends EventEmitter {
+  constructor(opt) {
+    super();
+    this.java = opt.java || null;
+    this.group = opt.group;
+    this.timeout = opt.timeout || 6000;
+    this.root = opt.root || "dubbo";
+    this.dependencies = opt.dependencies || {};
+    if (opt.register) {
+      console.warn(
+        `The attribute 'register' is deprecated and will be removed in the future version. Use registry instead.`
+      );
+    }
+    this.registry = opt.registry || opt.register;
+
+    this.initClient();
+  }
+
+  initClient() {
+    this.client = zookeeper.createClient(this.registry, {
+      sessionTimeout: 30000,
+      spinDelay: 1000,
+      retries: 5
+    });
+    this.client.connect();
+    this.client.once("connected", this.onOnceConnected.bind(this));
+  }
+
+  onOnceConnected() {
+    this.retrieveServices();
+    this.regConsumer();
+  }
+
+  retrieveServices() {
+    const services = Object.keys(this.dependencies).length;
+
+    for (const [key, val] of Object.entries(this.dependencies)) {
+      const path = `/${this.root}/${val.interface}/providers`;
+      this.client.getChildren(
+        path,
+        this.watchService.bind(this),
+        this.resolveService(path, key, val)
+      );
+    }
+  }
+
+  watchService(event) {
+    debug(event, "watch event");
+    this.retrieveServices();
+    this.emit("service:changed", event);
+  }
+
+  resolveService(path, depKey, depVal) {
+    return (error, children, stat) => {
+      if (error) {
+        console.error(error);
+        return;
+      }
+      if (children && !children.length) {
+        const errMsg = `Can\'t find the service: ${path}, please check!`;
+        console.error(errMsg);
+        return;
+      }
+      const size = children.length;
+      const providers = [];
+
+      for (let i = 0; i < size; i++) {
+        const provider = url.parse(decodeURIComponent(children[i]));
+        const queryObj = qs.parse(provider.query);
+        if (queryObj.version === depVal.version && queryObj.group === depVal.group) {
+          providers.push(provider);
+        }
+      }
+
+      if (!providers.length) {
+        console.error(
+          `Please check the version and group of dependency (${depKey}),`,
+          `due to they are not matched with any provider service found in zookeeper.`
+        );
+        return;
+      }
+
+      this.determineService(depKey, depVal, providers);
+    };
+  }
+
+  determineService(depKey, depVal, providers) {
+    this[depKey] = new NewService(depVal, providers);
+  }
+
+  regConsumer() {}
+}
+
+/***************************
+ *         Separator        *
+ ****************************/
 
 const NZD = function(opt) {
   Java = opt.java || Java;
@@ -110,6 +206,10 @@ Service.prototype.zooHandleRes = function(err, children) {
 
   for (let i = 0, l = children.length; i < l; i++) {
     zoo = qs.parse(decodeURIComponent(children[i]));
+    const uri = url.parse(decodeURIComponent(children[i]));
+    console.log(uri, " ===");
+    console.log(qs.parse(uri.query), " ===");
+
     if (zoo.version === this._version && zoo.group === this._group) {
       host = url.parse(Object.keys(zoo)[0]).host.split(":");
       this._hosts.push(host);
@@ -120,15 +220,13 @@ Service.prototype.zooHandleRes = function(err, children) {
       const methods = zoo.methods.split(",");
       for (let i = 0, l = methods.length; i < l; i++) {
         const method = methods[i];
-        this[method] = function() {
-          let args = Array.from(arguments);
+        this[method] = (...args) => {
+          // let args = Array.from(arguments);
           if (args.length && this._signature[method]) {
             args = this._signature[method].apply(this, args);
             if (typeof args === "function") args = args(Java);
           }
-          return new Promise((resolve, reject) =>
-            this._execute(method, args, resolve, reject)
-          );
+          return new Promise((resolve, reject) => this._execute(method, args, resolve, reject));
         };
       }
     }
@@ -171,4 +269,4 @@ Service.prototype._execute = function(method, args, resolve, reject) {
   });
 };
 
-module.exports = NZD;
+module.exports = { NZD, Yoke };
