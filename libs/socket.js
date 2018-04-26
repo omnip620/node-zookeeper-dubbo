@@ -76,7 +76,6 @@ Socket.prototype.destroy = function(msg) {
 Socket.prototype.onError = function(err) {
   this.error = err;
 
-  console.log(err, "-=-=");
   if (this.cb) {
     this.cb(err);
   }
@@ -162,7 +161,6 @@ Dispatcher.prototype.gain = function(cb) {
   if (!this.queue.length && !this.busyQueue.length) {
     return cb(new ConnectionPoolError(EXCEPTIONS.NO_AVAILABLE_WORKER));
   }
-  console.log(this.queue.length, "-1111");
   if (this.queue.length) {
     socket = this.queue.shift();
     if (socket.isConnect === false) {

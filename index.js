@@ -207,8 +207,6 @@ Service.prototype.zooHandleRes = function(err, children) {
   for (let i = 0, l = children.length; i < l; i++) {
     zoo = qs.parse(decodeURIComponent(children[i]));
     const uri = url.parse(decodeURIComponent(children[i]));
-    console.log(uri, " ===");
-    console.log(qs.parse(uri.query), " ===");
 
     if (zoo.version === this._version && zoo.group === this._group) {
       host = url.parse(Object.keys(zoo)[0]).host.split(":");

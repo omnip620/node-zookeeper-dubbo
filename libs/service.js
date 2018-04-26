@@ -49,7 +49,6 @@ class Service {
 
     this.dispatcher.gain((err, conn) => {
       if (err) {
-        console.log(err, "==");
         return reject(err);
       }
 
