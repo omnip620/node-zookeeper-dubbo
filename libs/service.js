@@ -1,9 +1,11 @@
 const qs = require("querystring");
 const { Dispatcher, Socket } = require("./socket");
+const debug = require("debug")("nzd");
 
 class Service {
   constructor(dep, providers) {
     let methods = null;
+    this.mdsig = Object.assign({}, dep.methodSignature);
     this.dispatcher = new Dispatcher();
     for (let i = 0, l = providers.length; i < l; i++) {
       const provider = providers[i];
@@ -29,10 +31,13 @@ class Service {
 
   injectMethods(methods) {
     const that = this;
+
     for (let i = 0, l = methods.length; i < l; i++) {
       const method = methods[i];
+
       this[method] = (...args) => {
-        if (args.length) {
+        if (args.length && this.mdsig[method]) {
+          args = this.mdsig[method](...args);
         }
 
         return new Promise((resolve, reject) => this.execute(method, args, resolve, reject));

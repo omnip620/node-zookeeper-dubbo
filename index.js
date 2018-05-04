@@ -9,7 +9,7 @@ const qs = require("querystring");
 const reg = require("./libs/register");
 const { Dispatcher, Socket } = require("./libs/socket");
 const { Service: NewService } = require("./libs/service");
-
+const chalk = require("chalk");
 const EventEmitter = require("events");
 // const util = require('util');
 let Java = null; // require('js-to-java');
@@ -27,7 +27,9 @@ class Yoke extends EventEmitter {
     this.dependencies = opt.dependencies || {};
     if (opt.register) {
       console.warn(
-        `The attribute 'register' is deprecated and will be removed in the future version. Use registry instead.`
+        chalk.yellow(
+          `WARNING: The attribute 'register' is deprecated and will be removed in the future version. Use registry instead.`
+        )
       );
     }
     this.registry = opt.registry || opt.register;
@@ -76,8 +78,8 @@ class Yoke extends EventEmitter {
         return;
       }
       if (children && !children.length) {
-        const errMsg = `Can\'t find the service: ${path}, please check!`;
-        console.error(errMsg);
+        const errMsg = `WARNING: Can\'t find the service: ${path}, please check!`;
+        console.error(chalk.yellow(errMsg));
         return;
       }
       const size = children.length;
@@ -93,8 +95,10 @@ class Yoke extends EventEmitter {
 
       if (!providers.length) {
         console.error(
-          `Please check the version and group of dependency (${depKey}),`,
-          `due to they are not matched with any provider service found in zookeeper.`
+          chalk.yellow(
+            `WARNING: Please check the version or group of dependency (${depKey}),`,
+            `due to they are not matched with any provider service found in zookeeper.`
+          )
         );
         return;
       }
