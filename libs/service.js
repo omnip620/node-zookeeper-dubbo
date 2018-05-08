@@ -1,11 +1,13 @@
+"use strict";
+
 const qs = require("querystring");
 const { Dispatcher, Socket } = require("./socket");
-const debug = require("debug")("nzd");
+const debug = require("debug")("yoke");
 
 class Service {
-  constructor(dep, providers) {
+  constructor(dependency, providers) {
     let methods = null;
-    this.mdsig = Object.assign({}, dep.methodSignature);
+    this.mdsig = Object.assign({}, dependency.methodSignature);
     this.dispatcher = new Dispatcher();
     for (let i = 0, l = providers.length; i < l; i++) {
       const provider = providers[i];
@@ -13,25 +15,24 @@ class Service {
       methods = queryObj.methods.split(",");
       this.initSockets(provider.hostname, provider.port);
     }
+    debug(`the ${dependency.interface} method list: ${methods}`);
 
     this.injectMethods(methods);
 
     this.encodeParam = {
       _dver: "2.5.3.6",
-      _interface: dep.interface,
-      _version: dep.version,
-      _group: dep.group,
-      _timeout: dep.timeout
+      _interface: dependency.interface,
+      _version: dependency.version,
+      _group: dependency.group,
+      _timeout: dependency.timeout
     };
   }
 
-  initSockets(hostName, port) {
-    this.dispatcher.insert(new Socket(port, hostName));
+  initSockets(host, port) {
+    this.dispatcher.insert(new Socket(port, host));
   }
 
   injectMethods(methods) {
-    const that = this;
-
     for (let i = 0, l = methods.length; i < l; i++) {
       const method = methods[i];
 

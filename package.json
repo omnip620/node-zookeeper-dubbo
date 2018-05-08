@@ -1,11 +1,11 @@
 {
   "name": "node-zookeeper-dubbo",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "debug": "DEBUG=nzd nodemon test/index.js"
+    "debug": "DEBUG=yoke nodemon test/index.js"
   },
   "keywords": [
     "zookeeper",
@@ -22,6 +22,7 @@
   "dependencies": {
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
+    "eslint": "^4.19.1",
     "express": "^4.16.2",
     "hessian.js": "^2.1.8",
     "koa": "^2.5.1",

@@ -1,5 +1,5 @@
 "use strict";
-const debug = require("debug")("nzd");
+const debug = require("debug")("yoke");
 const net = require("net");
 const decode = require("./decode");
 const Encode = require("./encode");
