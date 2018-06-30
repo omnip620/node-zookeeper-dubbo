@@ -2,6 +2,7 @@
  * Different codes match different error type
  * 1xx ConnectionPoolError
  */
+"use strict";
 
 const EXCEPTIONS = {
   NO_AVAILABLE_WORKER: "NO_AVAILABLE_WORKER"

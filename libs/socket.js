@@ -21,7 +21,10 @@ const Socket = function(port, host) {
   this.reject = null;
   this.cb = null;
 
-  this.socket = net.connect(port, host);
+  this.socket = net.connect(
+    port,
+    host
+  );
 
   // this.socket.setTimeout(6000);
 

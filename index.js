@@ -98,14 +98,14 @@ class Yoke extends EventEmitter {
         if (
           queryObj.version === depVal.version &&
           queryObj.group === depVal.group &&
-          provider.protocol.slice(0, -1) === "dubbo"
+          provider.protocol === "dubbo:"
         ) {
           providers.push(provider);
         }
       }
       if (!providers.length) {
         print.warn(
-          `WARNING: Please check the version or group or protocol(must dubbo) of dependency (${depKey}),`,
+          `WARNING: Please check the version、 group、 protocol(must dubbo) of dependency (${depKey}),`,
           `due to they are not matched with any provider service found in zookeeper.`
         );
 

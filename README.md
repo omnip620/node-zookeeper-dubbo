@@ -35,6 +35,8 @@ opt.java = require('js-to-java')
 
 const Dubbo=new nzd(opt);
 
+Dubbo.on("service:changed", (event)=>console.log(event))
+
 const customerObj = {
   $class: 'com.xxx.XXXDTO',
   $: {
@@ -72,7 +74,7 @@ app.listen(9090)
 - **dubboVer** - dubbo版本，必填
 - **root** - 注册到zookeeper上的根节点名称
 - **dependencies** - 依赖的服务集，必填
-  * Foo - 自定义名称，这里方便起见用Foo作为事例，必填
+  * Foo - 自定义名称，这里方便起见用Foo作为示例，必填
     * interface - 服务地址，必填
     * version - 注册的服务版本
     * timeout	-	超时时间，默认6000
@@ -85,6 +87,7 @@ var arg={$class:'int',$:123};
 //等同于
 var arg=java('int',123);
 ```
+
 
 ## TODO
 熔断
