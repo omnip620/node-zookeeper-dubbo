@@ -14,14 +14,9 @@ function Encode(opt) {
 
 Encode.prototype._head = function(len) {
   const head = Buffer([0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-  // let i    = 15;
   if (len > MAX_LEN) {
     throw new Error(`Data length too large: ${len}, maximum payload: ${MAX_LEN}`);
   }
-  // while (len >= 256) {
-  //   head.splice(i--, 1, len % 256);
-  //   len >>= 8;
-  // }
   head.writeInt32BE(len, 12);
   return head;
 };
@@ -64,7 +59,7 @@ Encode.prototype._argsType = function(args) {
   let parameterTypes = "";
   let type;
 
-  for (var i = 0, l = args.length; i < l; i++)  {
+  for (var i = 0, l = args.length; i < l; i++) {
     type = args[i]["$class"];
 
     if (type.charAt(0) === "[") {

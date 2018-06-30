@@ -51,9 +51,6 @@ Socket.prototype.invoke = function({ attach, resolve, reject }, cb) {
   this.transmiting = true;
   this.heartBeatLock = true;
 
-  // const {method, args} = this._excuteQueen[0];
-  // const attach = Object.assign({} , encodeParam, {_method:method, _args:args});
-
   // TODO:if invoke fail
   const buffer = new Encode(attach);
   this.socket.write(buffer);

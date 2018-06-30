@@ -1,6 +1,3 @@
-/**
- * Created by panzhichao on 16/6/30.
- */
 "use strict";
 
 const url = require("url");
@@ -90,10 +87,10 @@ function consumer() {
     slashes: "true",
     host: "",
     query: {
-      application: self.application.name,
+      application: self.name,
       category: "consumers",
       check: "false",
-      dubbo: self.dubboVer,
+      dubbo: self.dver,
       interface: "",
       revision: "",
       version: "",
@@ -132,14 +129,14 @@ function consumer() {
             }
             self.client.create(path, CREATE_MODES.EPHEMERAL, function(err, node) {
               if (err) {
-                console.error("Reg consumer failed:" + err.stack);
+                console.error("Failed to register consumer node:" + err.stack);
               }
             });
           });
         })
         .catch(function(err) {
           //创建consumers失败
-          console.error("Create consumer node failed: " + err.stack);
+          console.error("failed to create consumer node: " + err.stack);
         });
     })(paths[i]);
   }

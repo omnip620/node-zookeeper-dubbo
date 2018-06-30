@@ -6,7 +6,7 @@ const debug = require("debug")("yoke");
 const url = require("url");
 const zookeeper = require("node-zookeeper-client");
 const qs = require("querystring");
-// const reg = require("./libs/register");
+const reg = require("./libs/register");
 const { Service } = require("./libs/service");
 const EventEmitter = require("events");
 const { print } = require("./utils");
@@ -15,12 +15,14 @@ const { print } = require("./utils");
 class Yoke extends EventEmitter {
   constructor(opt) {
     super();
+    this.name = opt.application.name;
     this.java = opt.java || null;
     this.group = opt.group;
     this.timeout = opt.timeout || 6000;
     this.root = opt.root || "dubbo";
     this.dependencies = opt.dependencies || {};
     this.zkIsConnect = false;
+    this.dver = opt.dubboVer;
     if (opt.register) {
       print.warn(
         `WARNING: The attribute 'register' is deprecated and will be removed in the future version. Use registry instead.`
@@ -60,8 +62,6 @@ class Yoke extends EventEmitter {
   }
 
   retrieveServices() {
-    // const services = Object.keys(this.dependencies).length;
-
     for (const [key, val] of Object.entries(this.dependencies)) {
       const path = `/${this.root}/${val.interface}/providers`;
       this.client.getChildren(
@@ -117,11 +117,11 @@ class Yoke extends EventEmitter {
   }
 
   determineService(depKey, depVal, providers) {
-    this[depKey] = new Service(depVal, providers);
+    this[depKey] = new Service(depVal, providers, this.dver);
   }
 
   regConsumer() {
-    // reg.consumer.call(this);
+    reg.consumer.call(this);
   }
 }
 

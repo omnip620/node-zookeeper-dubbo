@@ -5,7 +5,7 @@ const { Dispatcher, Socket } = require("./socket");
 const debug = require("debug")("yoke");
 
 class Service {
-  constructor(dependency, providers) {
+  constructor(dependency, providers, dver) {
     let methods = null;
     this.mdsig = Object.assign({}, dependency.methodSignature);
     this.dispatcher = new Dispatcher();
@@ -15,12 +15,11 @@ class Service {
       methods = queryObj.methods.split(",");
       this.initSockets(provider.hostname, provider.port);
     }
-    debug(`the ${dependency.interface} method list: ${methods}`);
-
+    debug(`The ${dependency.interface} method list: ${methods.join(", ")}`);
     this.injectMethods(methods);
 
     this.encodeParam = {
-      _dver: "2.5.3.6",
+      _dver: dver || "2.5.3.6",
       _interface: dependency.interface,
       _version: dependency.version,
       _group: dependency.group,
@@ -58,8 +57,9 @@ class Service {
         return reject(err);
       }
 
-      conn.invoke(el, (err, done) => {
+      conn.invoke(el, () => {
         this.dispatcher.release(conn);
+
         if (conn.isConnect === false) {
           this.dispatcher.purgeConn(conn);
         }
