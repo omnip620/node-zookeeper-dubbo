@@ -87,7 +87,7 @@ app.listen(9090)
 
 可以选择使用  [js-to-java](https://github.com/node-modules/js-to-java)， 能极大提高效率。
 ```javascript
-const java = require('js-to-java);
+const java = require('js-to-java');
 const arg = {$class:'int',$:123};
 //等同于
 const arg = java('int',123);
