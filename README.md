@@ -1,8 +1,6 @@
 # node-zookeeper-dubbo
 nodejs通过dubbo默认协议通信
 
-本项目旨在解决nodejs和dubbo通信的问题，由于nodejs一般情况下多使用json作为数据交换格式，而在dubbo体系中默认使用hessian进行数据序列化，虽然dubbo也支持使用json，但是从某种角度而言效率未免不高，并且也不可能让既有的dubbo系统全部支持json传输，所以此项目就是为了解决这些问题而存在的。
-
 **3.0版本发布，使用长连接进行通信，同时重构了大量代码，性能几乎翻倍。**
 
 
