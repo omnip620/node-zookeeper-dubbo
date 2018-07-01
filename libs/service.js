@@ -29,6 +29,8 @@ class Service {
 
   initSockets(host, port) {
     this.dispatcher.insert(new Socket(port, host));
+    this.dispatcher.insert(new Socket(port, host));
+    this.dispatcher.insert(new Socket(port, host));
   }
 
   injectMethods(methods) {
@@ -39,7 +41,6 @@ class Service {
         if (args.length && this.mdsig[method]) {
           args = this.mdsig[method](...args);
         }
-
         return new Promise((resolve, reject) => this.execute(method, args, resolve, reject));
       };
     }

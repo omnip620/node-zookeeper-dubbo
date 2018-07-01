@@ -1,8 +1,12 @@
 # node-zookeeper-dubbo
 nodejs通过dubbo默认协议通信
 
+本项目旨在解决nodejs和dubbo通信的问题，由于nodejs一般情况下多使用json作为数据交换格式，而在dubbo体系中默认使用hessian进行数据序列化，虽然dubbo也支持使用json，但是从某种角度而言效率未免不高，并且也不可能让既有的dubbo系统全部支持json传输，所以此项目就是为了解决这些问题而存在的。
 
-### Usage
+**3.0版本发布，使用长连接进行通信，同时重构了大量代码，性能几乎翻倍。**
+
+
+### 用法
 
 ```javascript
 const nzd=require('node-zookeeper-dubbo');
@@ -81,17 +85,15 @@ app.listen(9090)
     * group	-	分组
     * methodSignature	-	方法签名
 
-可以选择使用  [js-to-java](https://github.com/node-modules/js-to-java)， 能极大提高效率
+可以选择使用  [js-to-java](https://github.com/node-modules/js-to-java)， 能极大提高效率。
 ```javascript
-var arg={$class:'int',$:123};
+const java = require('js-to-java);
+const arg = {$class:'int',$:123};
 //等同于
-var arg=java('int',123);
+const arg = java('int',123);
 ```
 
-
-## TODO
-熔断
-动态连接池
+感谢为这个项目作出过贡献的每个人，感谢为我提供思路和指导的 [@caomu](https://github.com/caomu)，感谢 [js-to-java](https://github.com/node-modules/js-to-java), [hessian.js](https://github.com/node-modules/hessian.js) 的作者们。
 
 [npm-image]:http://img.shields.io/npm/v/node-zookeeper-dubbo.svg?style=flat-square
 [npm-url]:https://npmjs.org/package/node-zookeeper-dubbo?style=flat-square
