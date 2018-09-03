@@ -18,7 +18,7 @@ Encode.prototype._head = function(len) {
     throw new Error(`Data length too large: ${len}, maximum payload: ${MAX_LEN}`);
   }
   head.writeInt32BE(len, 12);
-  return Buffer(head);
+  return head;
 };
 
 Encode.prototype._body = function(method, args) {

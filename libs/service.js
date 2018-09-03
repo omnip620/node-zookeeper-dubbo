@@ -29,6 +29,8 @@ class Service {
 
   initSockets(host, port) {
     this.dispatcher.insert(new Socket(port, host));
+    this.dispatcher.insert(new Socket(port, host));
+    this.dispatcher.insert(new Socket(port, host));
   }
 
   injectMethods(methods) {
