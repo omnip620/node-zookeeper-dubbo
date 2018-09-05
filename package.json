@@ -1,6 +1,6 @@
 {
   "name": "node-zookeeper-dubbo",
-  "version": "3.0.8",
+  "version": "3.0.9",
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
@@ -23,10 +23,7 @@
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
     "eslint": "^4.19.1",
-    "express": "^4.16.2",
     "hessian.js": "^2.1.8",
-    "koa": "^2.5.1",
-    "koa-router": "^7.4.0",
     "node-zookeeper-client": "0.2.2",
     "supports-color": "^5.1.0"
   },
