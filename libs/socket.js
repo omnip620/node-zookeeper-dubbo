@@ -21,6 +21,9 @@ const Socket = function(port, host) {
   this.reject = null;
   this.cb = null;
 
+  this.chunks = [];
+  this.bl = HEADER_LENGTH;
+
   this.socket = net.connect(
     port,
     host
@@ -50,9 +53,6 @@ Socket.prototype.invoke = function({ attach, resolve, reject }, cb) {
   this.cb = cb;
   this.transmiting = true;
   this.heartBeatLock = true;
-
-  this.chunks = [];
-  this.bl = HEADER_LENGTH;
 
   // TODO:if invoke fail
   const buffer = new Encode(attach);
