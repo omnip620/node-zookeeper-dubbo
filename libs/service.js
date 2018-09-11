@@ -38,7 +38,7 @@ class Service {
       const method = methods[i];
 
       this[method] = (...args) => {
-        if (args.length && this.mdsig[method]) {
+        if (this.mdsig[method]) {
           args = this.mdsig[method](...args);
         }
         return new Promise((resolve, reject) => this.execute(method, args, resolve, reject));
