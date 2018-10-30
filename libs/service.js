@@ -60,7 +60,7 @@ class Service {
 
       conn.invoke(el, err => {
         if (err) {
-          return reject(err);
+          reject(err);
         }
         this.dispatcher.release(conn);
 
