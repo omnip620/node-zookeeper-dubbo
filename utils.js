@@ -54,9 +54,12 @@ const log = (color, args) => console.log(chalk[color](args));
 const print = Object.create(null);
 print.warn = (...args) => log("yellow", args);
 print.err = (...args) => log("red", args);
+print.info = (...args) => log("green", args);
 
+const noop = () => {};
 module.exports = {
   nodeify,
   co,
-  print
+  print,
+  noop
 };

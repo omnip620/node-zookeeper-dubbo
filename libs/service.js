@@ -58,7 +58,10 @@ class Service {
         return reject(err);
       }
 
-      conn.invoke(el, () => {
+      conn.invoke(el, err => {
+        if (err) {
+          return reject(err);
+        }
         this.dispatcher.release(conn);
 
         if (conn.isConnect === false) {

@@ -10,7 +10,6 @@ const reg = require("./libs/register");
 const { Service } = require("./libs/service");
 const EventEmitter = require("events");
 const { print } = require("./utils");
-// const util = require('util');
 
 class Yoke extends EventEmitter {
   constructor(opt) {
@@ -38,23 +37,24 @@ class Yoke extends EventEmitter {
       spinDelay: 1000,
       retries: 5
     });
+
     this.client.connect();
     this.client.once("connected", this.onOnceConnected.bind(this));
+
     this.checkConnection();
   }
 
   checkConnection() {
+    const err = `FATAL: It seems that zookeeper cannot be connected, please check registry address or try later.`;
     this.zkConnectTimeout = setTimeout(() => {
-      !this.zkIsConnect &&
-        print.err(
-          `FATAL: It seems that zookeeper cannot be connected, please check registry address or try later.`
-        );
+      !this.zkIsConnect && print.err(err);
       clearTimeout(this.zkConnectTimeout);
     }, 10000);
   }
 
   onOnceConnected() {
     debug("zookeeper connect successfully");
+    print.info("Dubbo service init done");
     this.zkIsConnect = true;
     this.retrieveServices();
     this.regConsumer();
