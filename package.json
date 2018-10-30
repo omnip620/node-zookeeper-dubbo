@@ -4,7 +4,7 @@
   "description": "node connect dubbo by default protocol in zookeeper",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "ava",
     "debug": "DEBUG=yoke nodemon test/index.js"
   },
   "keywords": [
@@ -31,9 +31,10 @@
     "validateQuoteMarks": null
   },
   "devDependencies": {
-    "ava": "^0.25.0",
+    "ava": "0.25.0",
     "chai": "^4.2.0",
     "eslint": "^4.19.1",
+    "js-to-java": "^2.6.0",
     "mocha": "^5.2.0"
   }
 }

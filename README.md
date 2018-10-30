@@ -20,9 +20,9 @@ const opt={
       version:'LATEST',
       timeout:6000,
       group:'isis',
-      methodSignature: {
+      methodSignature: { // optional
         findById : (id) => [ {'$class': 'java.lang.Long', '$': id} ],
-        findByName : (name) => (java) => [ java.String(name) ],
+        findByName : (name) => [ java.String(name) ],
       }
     },
     Bar:{
@@ -33,7 +33,6 @@ const opt={
     }
   }
 }
-opt.java = require('js-to-java')
 
 const Dubbo=new nzd(opt);
 

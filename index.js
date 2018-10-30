@@ -16,7 +16,6 @@ class Yoke extends EventEmitter {
   constructor(opt) {
     super();
     this.name = opt.application.name;
-    this.java = opt.java || null;
     this.group = opt.group;
     this.timeout = opt.timeout || 6000;
     this.root = opt.root || "dubbo";
