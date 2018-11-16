@@ -41,12 +41,12 @@ class Service {
         if (this.mdsig[method]) {
           args = this.mdsig[method](...args);
         }
-        return new Promise((resolve, reject) => this.execute(method, args, resolve, reject));
+        return new Promise((resolve, reject) => this._execute(method, args, resolve, reject));
       };
     }
   }
 
-  execute(method, args, resolve, reject) {
+  _execute(method, args, resolve, reject) {
     const attach = Object.assign({}, this.encodeParam, {
       _method: method,
       _args: args
