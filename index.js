@@ -94,6 +94,9 @@ class Yoke extends EventEmitter {
       for (let i = 0; i < size; i++) {
         const provider = url.parse(decodeURIComponent(children[i]));
         const queryObj = qs.parse(provider.query);
+        if (!queryObj.version && queryObj['default.version']) {
+          queryObj.version = queryObj['default.version']
+        }
         if (
           queryObj.version === depVal.version &&
           queryObj.group === depVal.group &&
