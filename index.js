@@ -21,6 +21,10 @@ class Yoke extends EventEmitter {
     this.dependencies = opt.dependencies || {};
     this.zkIsConnect = false;
     this.dver = opt.dubboVer;
+    // 添加初始化成功回调
+    this.success = typeof opt.success === 'function'
+      ? opt.success
+      : new Function();
     if (opt.register) {
       print.warn(
         `WARNING: The attribute 'register' is deprecated and will be removed in the future version. Use registry instead.`
@@ -58,6 +62,8 @@ class Yoke extends EventEmitter {
     this.zkIsConnect = true;
     this.retrieveServices();
     this.regConsumer();
+    // call success callback
+    this.success()
   }
 
   retrieveServices() {
