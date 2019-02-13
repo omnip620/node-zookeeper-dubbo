@@ -24,10 +24,7 @@ const Socket = function(port, host) {
   this.chunks = [];
   this.bl = HEADER_LENGTH;
 
-  this.socket = net.connect(
-    port,
-    host
-  );
+  this.socket = net.connect(port, host);
 
   // this.socket.setTimeout(6000);
 
@@ -118,7 +115,7 @@ Socket.prototype.onData = function(data) {
 };
 
 Socket.prototype.deSerialize = function(heap) {
-  // 如果不是心跳事件则进行解析
+  // Decoding it if it's not a heartbeat event
   if (!((heap[2] & FLAG_EVENT) !== 0)) {
     decode(heap, (err, result) => {
       this.transmiting = false;

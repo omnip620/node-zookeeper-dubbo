@@ -3,7 +3,7 @@
 const qs = require("querystring");
 const { Dispatcher, Socket } = require("./socket");
 const debug = require("debug")("yoke");
-
+const execute = Symbol("execute");
 class Service {
   constructor(dependency, providers, dver) {
     let methods = null;
@@ -41,12 +41,12 @@ class Service {
         if (this.mdsig[method]) {
           args = this.mdsig[method](...args);
         }
-        return new Promise((resolve, reject) => this.execute(method, args, resolve, reject));
+        return new Promise((resolve, reject) => this[execute](method, args, resolve, reject));
       };
     }
   }
 
-  execute(method, args, resolve, reject) {
+  [execute](method, args, resolve, reject) {
     const attach = Object.assign({}, this.encodeParam, {
       _method: method,
       _args: args

@@ -21,19 +21,19 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "^2.4.1",
-    "debug": "^3.1.0",
+    "debug": "^4.1.1",
     "hessian.js": "^2.1.8",
-    "node-zookeeper-client": "0.2.2",
-    "supports-color": "^5.1.0"
+    "node-zookeeper-client": "0.2.3",
+    "supports-color": "^6.1.0"
   },
   "jscsConfig": {
     "preset": "node-style-guide",
     "validateQuoteMarks": null
   },
   "devDependencies": {
-    "ava": "0.25.0",
+    "ava": "1.2.1",
     "chai": "^4.2.0",
-    "eslint": "^4.19.1",
+    "eslint": "^5.13.0",
     "js-to-java": "^2.6.0",
     "mocha": "^5.2.0"
   }
