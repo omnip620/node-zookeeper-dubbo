@@ -22,8 +22,8 @@
   "dependencies": {
     "chalk": "^2.4.1",
     "debug": "^4.1.1",
-    "hessian.js": "^2.1.8",
-    "node-zookeeper-client": "0.2.3",
+    "hessian.js": "^2.9.0",
+    "node-zookeeper-client": "^1.1.0",
     "supports-color": "^6.1.0"
   },
   "jscsConfig": {

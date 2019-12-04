@@ -1,19 +1,23 @@
 "use strict";
 
 const qs = require("querystring");
-const { Dispatcher, Socket } = require("./socket");
 const debug = require("debug")("yoke");
+const PoolCluster = require("./pool-cluster");
+const Encode = require("./encode");
+const Dispatcher = require("./dispatcher");
 const execute = Symbol("execute");
 class Service {
   constructor(dependency, providers, dver) {
     let methods = null;
     this.mdsig = Object.assign({}, dependency.methodSignature);
-    this.dispatcher = new Dispatcher();
+    this.poolCluster = new PoolCluster();
+    this.poolCluster.addPool(dependency.interface);
+    this.dispatcher = new Dispatcher(dependency.interface);
     for (let i = 0, l = providers.length; i < l; i++) {
       const provider = providers[i];
       const queryObj = qs.parse(provider.query);
       methods = queryObj.methods.split(",");
-      this.initSockets(provider.hostname, provider.port);
+      this.poolCluster.addConnection(dependency.interface, provider.hostname, provider.port);
     }
     debug(`The ${dependency.interface} method list: ${methods.join(", ")}`);
     this.injectMethods(methods);
@@ -25,12 +29,6 @@ class Service {
       _group: dependency.group,
       _timeout: dependency.timeout
     };
-  }
-
-  initSockets(host, port) {
-    this.dispatcher.insert(new Socket(port, host));
-    this.dispatcher.insert(new Socket(port, host));
-    this.dispatcher.insert(new Socket(port, host));
   }
 
   injectMethods(methods) {
@@ -51,23 +49,12 @@ class Service {
       _method: method,
       _args: args
     });
-    const el = { attach, resolve, reject };
-
-    this.dispatcher.gain((err, conn) => {
+    const msg = new Encode(attach);
+    this.dispatcher.invoke(msg, (err, res) => {
       if (err) {
         return reject(err);
       }
-
-      conn.invoke(el, err => {
-        if (err) {
-          reject(err);
-        }
-        this.dispatcher.release(conn);
-
-        if (conn.isConnect === false) {
-          this.dispatcher.purgeConn(conn);
-        }
-      });
+      return resolve(res);
     });
   }
 }
