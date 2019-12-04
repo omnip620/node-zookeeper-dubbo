@@ -13,7 +13,6 @@ function Encode(opt) {
 }
 
 Encode.prototype._head = function(len) {
-  console.log(len + "===");
   const head = Buffer.from([0xda, 0xbb, 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   if (len > MAX_LEN) {
     throw new Error(`Data length too large: ${len}, maximum payload: ${MAX_LEN}`);

@@ -12,7 +12,6 @@ class Dispatcher {
   }
 
   execute({ msg, cb }) {
-    console.log(msg.length);
     const time = new Date().getTime();
     while (time + 1000 > new Date().getTime()) {}
     const conn = this.poolCluster.getAvailableConnection(this.depInterface);
@@ -28,6 +27,7 @@ class Dispatcher {
       });
       return;
     }
+
     const [idleConnections, busyConnections] = this.poolCluster.getConnections(this.depInterface);
     if (busyConnections.length == 0 && idleConnections.length == 0) {
       this.doNext();
