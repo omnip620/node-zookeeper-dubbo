@@ -50,7 +50,7 @@ class PoolCluster {
       return null;
     }
     const pool = this.pools[dependency];
-    return [pool.getIdleConnections(), pool.getBusyConnections()];
+    return [pool.getIdleConnections()];
   }
 
   getAvailableConnection(dependency) {
@@ -82,6 +82,14 @@ class PoolCluster {
 
     const pool = this.pools[dependency];
     pool.removeConnection(conn);
+  }
+
+  isEmpty(dependency) {
+    if (!(dependency in this.pools)) {
+      return;
+    }
+
+    return this.pools[dependency].isEmpty();
   }
 }
 

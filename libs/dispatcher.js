@@ -28,10 +28,9 @@ class Dispatcher {
       return;
     }
 
-    const [idleConnections, busyConnections] = this.poolCluster.getConnections(this.depInterface);
-    if (busyConnections.length == 0 && idleConnections.length == 0) {
+    if (this.poolCluster.isEmpty(this.depInterface)) {
       this.doNext();
-      cb(new RpcException(`No available provider for service ${this.depInterface}`));
+      cb(new RpcException(`No provider available for service ${this.depInterface}`));
       return;
     }
     this.enqueue({ msg, cb });
@@ -41,7 +40,9 @@ class Dispatcher {
     if (this.tasks.length <= 0) {
       return;
     }
-    this.execute(this.tasks.shift());
+    process.nextTick(() => {
+      this.execute(this.tasks.shift());
+    });
   }
 
   invoke(msg, cb) {

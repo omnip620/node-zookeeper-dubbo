@@ -1,32 +1,23 @@
 "use strict";
 const Connection = require("./connection");
-
 class Pool {
   constructor({ addresses, timeout }) {
     this.addresses = addresses;
     this.timeout = timeout;
     this.idleConnections = [];
-    this.busyConnections = [];
-    // this.initConnection();
-  }
-  initConnection() {
-    for (let i = 0; i < this.addresses.length; i++) {
-      this.idleConnections.push(
-        new Connection({ address: this.addresses[i], timeout: this.timeout })
-      );
-    }
+    this.connectionMap = Object.create(null);
   }
 
   addConnection(host, port) {
-    this.idleConnections.push(new Connection({ host, port, timeout: this.timeout, pool: this }));
+    const key = `${host}:${port}`;
+    if (!this.connectionMap[key]) {
+      this.connectionMap[key] = new Connection({ host, port, timeout: this.timeout, pool: this });
+      this.idleConnections.push(this.connectionMap[key]);
+    }
   }
 
   getIdleConnections() {
     return this.idleConnections;
-  }
-
-  getBusyConnections() {
-    return this.busyConnections;
   }
 
   getAvailableConnection() {
@@ -34,20 +25,27 @@ class Pool {
     if (this.getIdleConnections().length > 0) {
       conn = this.getIdleConnections().shift();
       conn.isIdle = false;
-      this.busyConnections.push(conn);
     }
+    console.log(`idleConn length: ${this.idleConnections.length}`);
     return conn;
   }
 
   release(conn) {
+    console.log(Object.keys(this.connectionMap).length);
     conn.isIdle = true;
-    removeConn(this.busyConnections, conn);
     this.idleConnections.push(conn);
   }
 
   removeConnection(conn) {
     removeConn(this.idleConnections, conn);
-    removeConn(this.busyConnections, conn);
+    const key = conn.getRemoteHost() + ":" + conn.getRemotePort();
+    if (this.connectionMap[key]) {
+      delete this.connectionMap[key];
+    }
+  }
+
+  isEmpty() {
+    return Object.keys(this.connectionMap).length == 0;
   }
 }
 
