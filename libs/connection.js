@@ -1,7 +1,7 @@
 "use strict";
 const net = require("net");
 const debug = require("debug")("Yoke:connection");
-const { isHeartBeat, encode } = require("./heartbeat");
+const { isHeartBeat, message: heartBeatMessage } = require("./heartbeat");
 const decode = require("./decode");
 require("./typedef");
 const HEADER_LENGTH = 16;
@@ -31,7 +31,7 @@ class Connection {
         return;
       }
       if (this.isIdle) {
-        this.socket.write(encode());
+        this.socket.write(heartBeatMessage);
       }
     }, 5000);
     debug(`Connection to ${this.socket.remoteAddress} is established`);
@@ -52,6 +52,7 @@ class Connection {
 
   onError(err) {
     this.callback(err);
+    console.log(`Error happens on service ${this.socket.remotePort}`);
     process.nextTick(() => {
       this.isIdle = true;
     });
@@ -61,8 +62,17 @@ class Connection {
     if (!isHeartBeat(heap)) {
       decode(heap, (err, res) => {
         this.callback(err, res);
+        this.isIdle = true;
       });
     }
+  }
+
+  getRemoteHost() {
+    return this.socket.remoteAddress;
+  }
+
+  getRemotePort() {
+    return this.socket.remotePort;
   }
 
   invoke(buffer, callback) {
