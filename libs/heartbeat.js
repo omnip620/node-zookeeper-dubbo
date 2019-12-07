@@ -19,7 +19,8 @@ const {
 const isHeartBeat = heap => (heap[2] & FLAG_EVENT) != 0;
 const encode = () => {
   // Msg consists of head, and body
-  const msg = Buffer.allocUnsafe(17);
+  const msg = Buffer.alloc(17);
+  // Set with 0 to avoid arbitrary buffer
   // Set dubbo magic code
   msg.writeUInt8(MAGIC_HI, 0);
   msg.writeUInt8(MAGIC_LO, 1);
@@ -32,12 +33,10 @@ const encode = () => {
   msg.fill(0, 4, 12);
   // Set data length with 1, because there is nothing but a null value in the body field
   msg.writeUInt8(0x01, 15);
-  // Set body
+  // Set body with null
   msg.writeInt8(0x4e, 16);
   return msg;
 };
-const message = () => {
-  return this.encode();
-};
+const message = encode();
 
 module.exports = { isHeartBeat, encode, message };
