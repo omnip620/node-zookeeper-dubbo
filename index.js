@@ -104,8 +104,8 @@ class Yoke extends EventEmitter {
       }
       if (!providers.length) {
         print.warn(
-          `WARNING: Please check the version、 group、 protocol(must dubbo) of dependency (${depKey}),`,
-          `due to they are not matched with any provider service found in zookeeper.`
+          `WARNING: Please check the version(${depVal.version})、 group(${depVal.group})、 protocol(must dubbo) of dependency (${depKey})`,
+          `since they are not matched with any provider service found in zookeeper.`
         );
 
         return;
