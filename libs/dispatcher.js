@@ -2,35 +2,35 @@
 const PoolCluster = require("./pool-cluster");
 const RpcException = require("./errors");
 class Dispatcher {
-  constructor(depInterface) {
+  constructor(depKey) {
     this.poolCluster = new PoolCluster();
     this.tasks = [];
-    this.depInterface = depInterface;
+    this.depKey = depKey;
   }
   enqueue(task) {
     this.tasks.push(task);
   }
 
   execute({ msg, cb }) {
-    const time = new Date().getTime();
-    while (time + 1000 > new Date().getTime()) {}
-    const conn = this.poolCluster.getAvailableConnection(this.depInterface);
+    // const time = new Date().getTime();
+    // while (time + 1000 > new Date().getTime()) {}
+    const conn = this.poolCluster.getAvailableConnection(this.depKey);
     if (conn != null) {
       conn.invoke(msg, (err, res) => {
         if (err && !(err instanceof RpcException)) {
-          this.poolCluster.removeConnectionOfAPool(this.depInterface, conn);
+          this.poolCluster.removeConnectionOfAPool(this.depKey, conn);
           cb(err);
         } else {
-          this.poolCluster.releaseConnectionOfAPool(this.depInterface, conn);
+          this.poolCluster.releaseConnectionOfAPool(this.depKey, conn);
           cb(err, res);
         }
       });
       return;
     }
 
-    if (this.poolCluster.isEmpty(this.depInterface)) {
+    if (this.poolCluster.isEmpty(this.depKey)) {
       this.doNext();
-      cb(new RpcException(`No provider available for service ${this.depInterface}`));
+      cb(new RpcException(`No provider available for service ${this.depKey}`));
       return;
     }
     this.enqueue({ msg, cb });

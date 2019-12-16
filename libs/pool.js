@@ -26,12 +26,10 @@ class Pool {
       conn = this.getIdleConnections().shift();
       conn.isIdle = false;
     }
-    console.log(`idleConn length: ${this.idleConnections.length}`);
     return conn;
   }
 
   release(conn) {
-    console.log(Object.keys(this.connectionMap).length);
     conn.isIdle = true;
     this.idleConnections.push(conn);
   }

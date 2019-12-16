@@ -7,17 +7,17 @@ const Encode = require("./encode");
 const Dispatcher = require("./dispatcher");
 const execute = Symbol("execute");
 class Service {
-  constructor(dependency, providers, dver) {
+  constructor(dependency, providers, dver, dkey) {
     let methods = null;
     this.mdsig = Object.assign({}, dependency.methodSignature);
     this.poolCluster = new PoolCluster();
-    this.poolCluster.addPool(dependency.interface);
-    this.dispatcher = new Dispatcher(dependency.interface);
+    this.poolCluster.addPool(dkey);
+    this.dispatcher = new Dispatcher(dkey);
     for (let i = 0, l = providers.length; i < l; i++) {
       const provider = providers[i];
       const queryObj = qs.parse(provider.query);
       methods = queryObj.methods.split(",");
-      this.poolCluster.addConnection(dependency.interface, provider.hostname, provider.port);
+      this.poolCluster.addConnection(dkey, provider.hostname, provider.port);
     }
     debug(`The ${dependency.interface} method list: ${methods.join(", ")}`);
     this.injectMethods(methods);

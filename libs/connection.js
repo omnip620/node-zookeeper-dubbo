@@ -16,6 +16,8 @@ class Connection {
     this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("data", this.onData.bind(this));
     this.socket.on("error", this.onError.bind(this));
+    this.socket.on("close", this.onClose.bind(this));
+
     this.isIdle = true;
     /** interval for sending heart beat message */
     this.heartBeatEvent = null;
@@ -50,12 +52,14 @@ class Connection {
     }
   }
 
+  onClose() {
+    this.callback("Socket close by peer");
+  }
+
   onError(err) {
     this.callback(err);
-    console.log(`Error happens on service ${this.socket.remotePort}`);
-    process.nextTick(() => {
-      this.isIdle = true;
-    });
+    console.log(`Error happens on service ${this.socket.remotePort} -> ${err}`);
+    this.isIdle = true;
   }
 
   deSerialize(heap) {

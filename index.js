@@ -93,7 +93,6 @@ class Yoke extends EventEmitter {
 
       for (let i = 0; i < size; i++) {
         const provider = url.parse(decodeURIComponent(children[i]));
-        console.log(JSON.stringify(provider) + "---");
         const queryObj = qs.parse(provider.query);
         if (
           queryObj.version === depVal.version &&
@@ -117,7 +116,7 @@ class Yoke extends EventEmitter {
   }
 
   determineService(depKey, depVal, providers) {
-    this[depKey] = new Service(depVal, providers, this.dver);
+    this[depKey] = new Service(depVal, providers, this.dver, depKey);
   }
 
   regConsumer() {
